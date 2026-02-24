@@ -1,0 +1,3179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解放戦記 クエストログ v13｜奴隷ソルジャー医.Ryu</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --panel: #10101a;
+    --border: #2a2a3a;
+    --gold: #c9a84c;
+    --gold-dim: #7a6030;
+    --red: #c0392b;
+    --green: #27ae60;
+    --bear: #c8845a;
+    --blue: #2980b9;
+    --text: #d4d0c8;
+    --text-dim: #6a6a7a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Serif JP', serif;
+    min-height: 100vh;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(192,57,43,0.03) 0%, transparent 60%);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    padding: 30px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .header::before {
+    content: '⚔';
+    font-size: 12px;
+    color: var(--gold-dim);
+    display: block;
+    letter-spacing: 8px;
+    margin-bottom: 8px;
+  }
+  .header h1 {
+    font-size: clamp(18px, 4vw, 26px);
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px rgba(201,168,76,0.4);
+    line-height: 1.4;
+  }
+  .header .subtitle {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    margin-top: 8px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* ── 白ローブクマ（右上） ── */
+  .robe-bear {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 64px;
+    height: 64px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s;
+    filter: drop-shadow(0 0 6px rgba(201,168,76,0.2));
+  }
+  .robe-bear:hover { transform: scale(1.08); filter: drop-shadow(0 0 10px rgba(201,168,76,0.4)); }
+  .robe-bear.smash { animation: bearSmash 0.4s ease; }
+
+  /* ── 三軸成長システム ── */
+  .exp-panel { display: none; } /* 旧EXPパネル非表示 */
+  .exp-bar-bg { background: var(--border); border-radius: 2px; height: 8px; overflow: hidden; margin-top: 6px; }
+  .exp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); border-radius: 2px; transition: width 0.8s ease; box-shadow: 0 0 8px var(--gold); }
+  .status-label { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; font-family: 'Share Tech Mono', monospace; margin-bottom: 4px; }
+  .status-value { font-size: 14px; color: var(--gold); font-weight: 700; }
+
+  .growth-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .growth-header { font-size: 10px; color: var(--gold-dim); letter-spacing: 3px; font-family: 'Share Tech Mono', monospace; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .growth-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .growth-axes { display: flex; flex-direction: column; gap: 10px; }
+
+  .growth-axis { border: 1px solid var(--border); border-radius: 3px; padding: 12px 14px; background: var(--bg); position: relative; overflow: hidden; }
+  .growth-axis::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+  .growth-axis.ax-gold::before { background: var(--gold); }
+  .growth-axis.ax-red::before { background: var(--red); }
+  .growth-axis.ax-blue::before { background: var(--blue); }
+
+  .ax-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .ax-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+  .ax-label { font-size: 9px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; flex: 1; }
+  .ax-rank { font-size: 13px; font-weight: 700; font-family: 'Noto Serif JP', serif; }
+  .ax-rank.gold { color: var(--gold); }
+  .ax-rank.red { color: var(--red); }
+  .ax-rank.blue { color: var(--blue); }
+
+  .ax-bar-bg { background: var(--border); border-radius: 2px; height: 5px; overflow: hidden; margin-bottom: 6px; }
+  .ax-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+  .ax-bar-fill.gold { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); box-shadow: 0 0 6px rgba(201,168,76,0.5); }
+  .ax-bar-fill.red { background: linear-gradient(90deg, #6b0000, var(--red)); box-shadow: 0 0 6px rgba(192,57,43,0.5); }
+  .ax-bar-fill.blue { background: linear-gradient(90deg, #0d2a4a, var(--blue)); box-shadow: 0 0 6px rgba(41,128,185,0.5); }
+
+  .ax-meta { display: flex; justify-content: space-between; font-size: 10px; font-family: 'Share Tech Mono', monospace; }
+  .ax-meta-cur { color: var(--text-dim); }
+  .ax-meta-next { color: var(--text-dim); }
+  .ax-meta-next span { color: var(--gold-dim); }
+
+  .ax-skills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .ax-skill { font-size: 9px; font-family: 'Share Tech Mono', monospace; padding: 2px 7px; border-radius: 2px; letter-spacing: 1px; }
+  .ax-skill.unlocked { background: rgba(39,174,96,0.15); color: var(--green); border: 1px solid var(--green); }
+  .ax-skill.locked { background: transparent; color: var(--border); border: 1px solid var(--border); }
+
+  /* ── 格言パネル ── */
+  .quote-panel {
+    background: var(--panel);
+    border: 1px solid var(--bear);
+    border-left: 3px solid var(--bear);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .quote-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .quote-header .qh-icon { font-size: 16px; }
+  .quote-header .qh-label { font-size: 10px; color: var(--bear); letter-spacing: 2px; font-family: 'Share Tech Mono', monospace; flex: 1; }
+  .quote-header .qh-tag { font-size: 9px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
+  .quote-text { font-size: 13px; color: var(--text); line-height: 1.8; margin-bottom: 12px; min-height: 40px; font-weight: 700; cursor: pointer; }
+  .quote-text .hl { color: var(--gold); }
+  .quote-tag-line { font-size: 10px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; margin-bottom: 10px; }
+  .quote-panel.sharp-mode { border-color: var(--red); border-left-color: var(--red); background: rgba(192,57,43,0.04); }
+  .quote-actions { display: flex; gap: 8px; }
+  .qa-btn { flex: 1; padding: 8px 10px; font-size: 10px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; cursor: pointer; border-radius: 2px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); transition: all 0.2s; }
+  .qa-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .qa-btn.tweet-btn { background: rgba(29,161,242,0.1); border-color: #1da1f2; color: #1da1f2; }
+  .qa-btn.tweet-btn:hover { background: rgba(29,161,242,0.2); }
+  .qa-btn.copy-btn { background: rgba(201,168,76,0.1); border-color: var(--gold-dim); color: var(--gold-dim); }
+  .qa-btn.copy-btn:hover { background: rgba(201,168,76,0.2); color: var(--gold); }
+
+  /* ── STATS PANEL ── */
+  .stats-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .stats-title { font-size: 11px; color: var(--gold-dim); letter-spacing: 3px; font-family: 'Share Tech Mono', monospace; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .stats-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 12px 14px; cursor: pointer; transition: border-color 0.2s; position: relative; }
+  .stat-card:hover { border-color: var(--gold-dim); }
+  .stat-card:active { transform: scale(0.98); }
+  .stat-card .sc-label { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; font-family: 'Share Tech Mono', monospace; margin-bottom: 6px; }
+  .stat-card .sc-value { font-size: 22px; font-weight: 900; color: var(--gold); font-family: 'Share Tech Mono', monospace; line-height: 1; }
+  .stat-card .sc-unit { font-size: 11px; color: var(--text-dim); margin-left: 3px; }
+  .stat-card .sc-bar-bg { background: var(--border); border-radius: 2px; height: 3px; overflow: hidden; margin-top: 8px; }
+  .stat-card .sc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+  .stat-card .sc-edit-hint { position: absolute; top: 8px; right: 10px; font-size: 9px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; opacity: 0; transition: opacity 0.2s; }
+  .stat-card:hover .sc-edit-hint { opacity: 1; }
+  .milestone-badge { display: inline-block; font-size: 9px; font-family: 'Share Tech Mono', monospace; padding: 2px 6px; border-radius: 2px; margin-top: 4px; letter-spacing: 1px; }
+  .milestone-badge.reached { background: rgba(39,174,96,0.2); color: var(--green); border: 1px solid var(--green); }
+  .milestone-badge.next { background: rgba(201,168,76,0.1); color: var(--gold-dim); border: 1px solid var(--gold-dim); }
+  .sc-history { font-size: 9px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ── 称号パネル ── */
+  .title-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .title-panel-header { font-size: 11px; color: var(--gold-dim); letter-spacing: 3px; font-family: 'Share Tech Mono', monospace; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .title-panel-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .title-panel-header .tp-toggle { color: var(--text-dim); font-size: 11px; transition: transform 0.3s; }
+  .title-panel-header .tp-toggle.open { transform: rotate(180deg); }
+  .titles-grid { display: none; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .titles-grid.open { display: grid; }
+  .title-card {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 12px;
+    position: relative;
+    transition: all 0.3s;
+  }
+  .title-card.unlocked {
+    border-color: var(--gold-dim);
+    background: rgba(201,168,76,0.05);
+  }
+  .title-card.unlocked.equipped {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    box-shadow: 0 0 12px rgba(201,168,76,0.15);
+  }
+  .title-card.locked { opacity: 0.4; }
+  .title-card .tc-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  .title-card.unlocked .tc-name { color: var(--gold); }
+  .title-card .tc-cond { font-size: 10px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; line-height: 1.5; }
+  .title-card .tc-lock { font-size: 14px; position: absolute; top: 8px; right: 10px; }
+  .title-card.unlocked .tc-lock { color: var(--gold-dim); }
+  .title-card.unlocked.equipped .tc-lock { color: var(--gold); }
+  .title-card.locked .tc-lock { color: var(--border); }
+  .title-card.unlocked { cursor: pointer; }
+  .title-card.unlocked:hover { border-color: var(--gold); }
+  .equipped-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--gold);
+    background: rgba(201,168,76,0.15);
+    border: 1px solid var(--gold-dim);
+    padding: 1px 6px;
+    border-radius: 2px;
+    margin-top: 4px;
+  }
+  .current-title-display {
+    background: var(--bg);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    padding: 8px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ctd-label { font-size: 10px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
+  .ctd-value { font-size: 13px; font-weight: 700; color: var(--gold); flex: 1; }
+
+  /* ── 戦場日誌 ── */
+  .journal-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 24px; }
+  .journal-header { font-size: 11px; color: var(--gold-dim); letter-spacing: 3px; font-family: 'Share Tech Mono', monospace; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .journal-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .journal-header .jh-toggle { color: var(--text-dim); font-size: 11px; transition: transform 0.3s; }
+  .journal-header .jh-toggle.open { transform: rotate(180deg); }
+  .journal-body { display: none; }
+  .journal-body.open { display: block; }
+  .journal-input-area {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .journal-date-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .journal-date-label {
+    font-size: 10px;
+    color: var(--gold-dim);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .journal-date-val {
+    font-size: 11px;
+    color: var(--gold);
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .journal-hp-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .hp-btn {
+    padding: 4px 10px;
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .hp-btn:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+  .hp-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
+  .journal-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Noto Serif JP', serif;
+    line-height: 1.8;
+    resize: none;
+    outline: none;
+    min-height: 80px;
+    placeholder-color: var(--text-dim);
+  }
+  .journal-textarea::placeholder { color: var(--text-dim); }
+  .journal-save-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: var(--gold-dim);
+    color: var(--bg);
+    border: none;
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+    margin-bottom: 16px;
+  }
+  .journal-save-btn:hover { background: var(--gold); }
+  .journal-entries { display: flex; flex-direction: column; gap: 8px; }
+  .journal-entry {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold-dim);
+    border-radius: 2px;
+    padding: 12px 14px;
+    animation: fadeIn 0.4s ease;
+    position: relative;
+  }
+  .journal-entry .je-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .journal-entry .je-date {
+    font-size: 10px;
+    color: var(--gold-dim);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+  }
+  .journal-entry .je-hp {
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    padding: 1px 7px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+  .je-hp.hp-full { color: var(--green); background: rgba(39,174,96,0.1); border: 1px solid var(--green); }
+  .je-hp.hp-good { color: var(--gold); background: rgba(201,168,76,0.1); border: 1px solid var(--gold-dim); }
+  .je-hp.hp-low { color: var(--bear); background: rgba(200,132,90,0.1); border: 1px solid var(--bear); }
+  .je-hp.hp-critical { color: var(--red); background: rgba(192,57,43,0.1); border: 1px solid var(--red); }
+  .journal-entry .je-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+  .journal-entry .je-delete {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--border);
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.2s;
+    padding: 2px 4px;
+  }
+  .journal-entry .je-delete:hover { color: var(--red); }
+  .journal-empty {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    padding: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* ── CHAPTER & QUEST ── */
+  .chapter { margin-bottom: 28px; }
+  .chapter-header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--gold-dim); margin-bottom: 8px; cursor: pointer; user-select: none; transition: border-left-color 0.2s; }
+  .chapter-header:hover, .chapter-header.active { border-left-color: var(--gold); }
+  .chapter-title { font-size: 13px; font-weight: 700; color: var(--gold); letter-spacing: 2px; flex: 1; }
+  .chapter-progress { font-size: 11px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
+  .chapter-toggle { color: var(--text-dim); font-size: 12px; transition: transform 0.3s; }
+  .chapter-toggle.open { transform: rotate(180deg); }
+  .quest-list { display: none; flex-direction: column; gap: 6px; padding: 4px 0; }
+  .quest-list.open { display: flex; }
+  .quest-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 2px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+  .quest-item:hover { border-color: var(--gold-dim); background: rgba(201,168,76,0.03); }
+  .quest-item:active { transform: scale(0.99); }
+  .quest-item.done { opacity: 0.7; border-color: var(--green); background: rgba(39,174,96,0.05); }
+  .quest-item.done::after { content: '討伐済'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 10px; color: var(--green); font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; opacity: 0.8; }
+  .quest-checkbox { width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 2px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-size: 12px; }
+  .quest-item.done .quest-checkbox { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px rgba(39,174,96,0.4); }
+  .quest-content { flex: 1; min-width: 0; }
+  .quest-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.5; }
+  .quest-item.done .quest-name { color: var(--text-dim); text-decoration: line-through; text-decoration-color: var(--green); }
+  .quest-desc { font-size: 11px; color: var(--text-dim); margin-top: 4px; line-height: 1.6; }
+  .quest-reward { font-size: 10px; color: var(--gold-dim); font-family: 'Share Tech Mono', monospace; margin-top: 6px; }
+  .quest-item.done .quest-reward { color: var(--green); }
+  .quest-date { font-size: 10px; color: var(--green); font-family: 'Share Tech Mono', monospace; margin-top: 4px; display: none; }
+  .quest-item.done .quest-date { display: block; }
+
+  /* ── LOG ── */
+  .completed-log { margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px; }
+  .log-title { font-size: 11px; color: var(--text-dim); letter-spacing: 3px; font-family: 'Share Tech Mono', monospace; margin-bottom: 16px; text-align: center; }
+  .log-entries { display: flex; flex-direction: column; gap: 4px; }
+  .log-entry { display: flex; gap: 12px; font-size: 11px; font-family: 'Share Tech Mono', monospace; color: var(--text-dim); padding: 6px 12px; border-left: 2px solid var(--green); background: rgba(39,174,96,0.03); animation: fadeIn 0.5s ease; }
+  .log-entry.stat-log { border-left-color: var(--gold-dim); background: rgba(201,168,76,0.03); }
+  .log-entry.bear-log { border-left-color: var(--bear); background: rgba(200,132,90,0.03); }
+  .log-entry.title-log { border-left-color: var(--gold); background: rgba(201,168,76,0.06); }
+  .log-entry .log-time { color: var(--gold-dim); flex-shrink: 0; }
+  .log-entry .log-text span { color: var(--green); }
+  .log-entry.stat-log .log-text span { color: var(--gold); }
+  .log-entry.bear-log .log-text span { color: var(--bear); }
+  .log-entry.title-log .log-text span { color: var(--gold); }
+
+  /* ── HP/MP パネル ── */
+  .vital-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .vital-title { font-size: 11px; color: var(--gold-dim); letter-spacing: 3px; font-family: 'Share Tech Mono', monospace; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .vital-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .vital-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .vital-card { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; }
+  .vital-card-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .vital-card-name { font-size: 11px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; }
+  .vital-card-sub { font-size: 9px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; opacity: 0.6; }
+  .vital-bar-wrap { margin-bottom: 10px; }
+  .vital-bar-bg { background: var(--border); border-radius: 3px; height: 10px; overflow: hidden; }
+  .vital-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+  .vital-bar-hp { background: linear-gradient(90deg, #8b0000, #c0392b, #e74c3c); box-shadow: 0 0 8px rgba(192,57,43,0.5); }
+  .vital-bar-mp { background: linear-gradient(90deg, #1a3a6a, #2980b9, #5dade2); box-shadow: 0 0 8px rgba(41,128,185,0.5); }
+  .vital-inputs { display: flex; flex-direction: column; gap: 8px; }
+  .vital-input-row { display: flex; align-items: center; gap: 8px; }
+  .vital-input-label { font-size: 10px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; width: 68px; flex-shrink: 0; }
+  .vital-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; outline: none; cursor: pointer; }
+  .vital-slider.hp-slider { background: linear-gradient(90deg, var(--red) var(--pct, 70%), var(--border) var(--pct, 70%)); }
+  .vital-slider.mp-slider { background: linear-gradient(90deg, var(--blue) var(--pct, 70%), var(--border) var(--pct, 70%)); }
+  .vital-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--bg); cursor: pointer; }
+  .vital-slider.hp-slider::-webkit-slider-thumb { background: var(--red); }
+  .vital-slider.mp-slider::-webkit-slider-thumb { background: var(--blue); }
+  .vital-val { font-size: 11px; color: var(--text); font-family: 'Share Tech Mono', monospace; width: 28px; text-align: right; }
+  .vital-pct { font-size: 28px; font-weight: 900; font-family: 'Share Tech Mono', monospace; margin-bottom: 4px; }
+  .vital-pct.hp { color: var(--red); }
+  .vital-pct.mp { color: var(--blue); }
+  .vital-status-text { font-size: 10px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; margin-top: 4px; }
+  .vital-save-btn { display: block; width: 100%; padding: 8px; margin-top: 10px; background: transparent; border: 1px solid var(--border); color: var(--text-dim); font-size: 10px; font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+  .vital-save-btn:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+  @media (max-width: 480px) { .vital-grid { grid-template-columns: 1fr; } }
+
+  /* ── FOOTER ── */
+  .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; }
+  .footer .bear-sign { color: var(--bear); margin-top: 8px; font-size: 13px; }
+
+  /* ── 初コメ製造マシーン ── */
+  .fcm-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 24px; }
+  .fcm-header { font-size: 11px; color: var(--gold-dim); letter-spacing: 3px; font-family: 'Share Tech Mono', monospace; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .fcm-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .fcm-toggle { color: var(--text-dim); font-size: 11px; transition: transform 0.3s; }
+  .fcm-toggle.open { transform: rotate(180deg); }
+  .fcm-body { display: none; margin-top: 16px; }
+  .fcm-body.open { display: block; }
+  .fcm-lore { font-size: 11px; color: var(--bear); font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; margin-bottom: 14px; line-height: 1.8; border-left: 2px solid var(--bear); padding-left: 10px; }
+  .fcm-stats-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .fcm-stat { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px; text-align: center; }
+  .fcm-stat-val { font-size: 18px; font-weight: 900; color: var(--gold); font-family: 'Share Tech Mono', monospace; }
+  .fcm-stat-lab { font-size: 9px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; }
+  .fcm-pt-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .fcm-pt-btn { flex: 1; padding: 8px; font-size: 10px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+  .fcm-pt-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+  .fcm-cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin-bottom: 14px; }
+  .fcm-cat-btn { padding: 8px 10px; font-size: 10px; font-family: 'Share Tech Mono', monospace; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; border-radius: 2px; transition: all 0.2s; text-align: left; }
+  .fcm-cat-btn:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+  .fcm-cat-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+  .fcm-gen-btn { display: block; width: 100%; padding: 12px; background: var(--gold-dim); color: var(--bg); border: none; font-size: 12px; font-family: 'Share Tech Mono', monospace; letter-spacing: 3px; cursor: pointer; border-radius: 2px; transition: all 0.2s; margin-bottom: 14px; font-weight: 700; }
+  .fcm-gen-btn:hover { background: var(--gold); }
+  .fcm-result { background: var(--bg); border: 1px solid var(--border); border-left: 3px solid var(--gold-dim); border-radius: 2px; padding: 14px 16px; min-height: 70px; margin-bottom: 10px; transition: border-left-color 0.3s; }
+  .fcm-result.has-content { border-left-color: var(--bear); }
+  .fcm-result-text { font-size: 13px; line-height: 1.9; color: var(--text); white-space: pre-wrap; }
+  .fcm-placeholder { font-size: 11px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
+  .fcm-action-row { display: flex; gap: 6px; margin-top: 10px; }
+  .fcm-action-btn { flex: 1; padding: 9px 6px; font-size: 10px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; cursor: pointer; border-radius: 2px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); transition: all 0.2s; }
+  .fcm-action-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .fcm-btn-tweet { background: rgba(29,161,242,0.08); border-color: #1da1f2 !important; color: #1da1f2 !important; }
+  .fcm-btn-tweet:hover { background: rgba(29,161,242,0.2) !important; }
+  .fcm-btn-copy { background: rgba(201,168,76,0.08); border-color: var(--gold-dim) !important; color: var(--gold-dim) !important; }
+  .fcm-btn-copy:hover { background: rgba(201,168,76,0.18) !important; color: var(--gold) !important; }
+
+  /* ── ADD QUEST ── */
+  .add-quest-btn { display: block; width: 100%; padding: 12px; background: transparent; border: 1px dashed var(--border); color: var(--text-dim); font-size: 11px; font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; cursor: pointer; margin-top: 6px; transition: all 0.2s; border-radius: 2px; }
+  .add-quest-btn:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+
+  /* ── MODALS ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--gold-dim); padding: 24px; width: 100%; max-width: 480px; border-radius: 4px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { color: var(--gold); font-size: 14px; letter-spacing: 2px; margin-bottom: 16px; }
+  .modal input, .modal select, .modal textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; font-size: 13px; font-family: 'Noto Serif JP', serif; border-radius: 2px; margin-bottom: 10px; outline: none; }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--gold-dim); }
+  .modal select option { background: var(--bg); }
+  .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .btn { flex: 1; padding: 10px; font-size: 12px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; cursor: pointer; border-radius: 2px; border: none; transition: all 0.2s; }
+  .btn-primary { background: var(--gold-dim); color: var(--bg); }
+  .btn-primary:hover { background: var(--gold); }
+  .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+  .btn-secondary:hover { border-color: var(--text-dim); }
+  .stat-current-display { background: var(--bg); border: 1px solid var(--border); border-radius: 2px; padding: 12px; margin-bottom: 12px; text-align: center; }
+  .stat-current-display .cur-label { font-size: 10px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; }
+  .stat-current-display .cur-value { font-size: 28px; font-weight: 900; color: var(--gold); font-family: 'Share Tech Mono', monospace; margin-top: 4px; }
+
+  /* ── 達成演出 ── */
+  .celebration-overlay { display: none; position: fixed; inset: 0; z-index: 200; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); flex-direction: column; gap: 12px; }
+  .celebration-overlay.open { display: flex; }
+  .cel-bear-big { font-size: 64px; animation: bearBounce 0.5s ease infinite alternate; line-height: 1; }
+  .cel-title { font-size: 20px; font-weight: 900; color: var(--gold); letter-spacing: 4px; text-align: center; text-shadow: 0 0 20px rgba(201,168,76,0.6); }
+  .cel-sub { font-size: 12px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; text-align: center; max-width: 300px; line-height: 1.6; }
+  .cel-reward { font-size: 13px; color: var(--green); font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; }
+  .cel-close { margin-top: 16px; padding: 10px 30px; background: var(--gold-dim); color: var(--bg); border: none; font-size: 12px; font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; cursor: pointer; border-radius: 2px; transition: background 0.2s; }
+  .cel-close:hover { background: var(--gold); }
+
+  /* ── トースト ── */
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--gold-dim); color: var(--bg); padding: 10px 20px; border-radius: 4px; font-size: 12px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; opacity: 0; transition: all 0.3s; z-index: 300; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes levelUp { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 30px var(--gold); } 100% { transform: scale(1); } }
+  @keyframes bearSmash { 0% { transform: scale(1) rotate(0); } 30% { transform: scale(1.2) rotate(-8deg); } 60% { transform: scale(0.95) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
+  @keyframes bearBounce { from { transform: translateY(0) scale(1); } to { transform: translateY(-8px) scale(1.04); } }
+  .level-up-flash { animation: levelUp 0.6s ease; }
+
+  /* ── 勉強ログ ── */
+  .study-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .study-header { font-size: 11px; color: var(--gold-dim); letter-spacing: 3px; font-family: 'Share Tech Mono', monospace; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .study-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .study-header .sh-toggle { color: var(--text-dim); font-size: 11px; transition: transform 0.3s; }
+  .study-header .sh-toggle.open { transform: rotate(180deg); }
+  .study-body { display: none; }
+  .study-body.open { display: block; }
+  .study-input-area { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 12px; margin-bottom: 12px; }
+  .study-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
+  .study-row-label { font-size: 10px; color: var(--gold-dim); font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; white-space: nowrap; min-width: 60px; }
+  .study-cat-btn { padding: 4px 10px; font-size: 10px; font-family: 'Share Tech Mono', monospace; border-radius: 2px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
+  .study-cat-btn:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+  .study-cat-btn.selected { border-color: var(--blue); color: var(--blue); background: rgba(41,128,185,0.1); }
+  .study-input { width: 100%; background: transparent; border: none; color: var(--text); font-size: 13px; font-family: 'Noto Serif JP', serif; line-height: 1.8; outline: none; }
+  .study-input::placeholder { color: var(--text-dim); }
+  .study-dur-input { width: 60px; background: var(--bg); border: 1px solid var(--border); color: var(--gold); font-size: 12px; font-family: 'Share Tech Mono', monospace; padding: 4px 6px; border-radius: 2px; outline: none; text-align: center; }
+  .study-dur-input:focus { border-color: var(--gold-dim); }
+  .study-save-btn { display: block; width: 100%; padding: 10px; background: var(--gold-dim); color: var(--bg); border: none; font-size: 11px; font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; cursor: pointer; border-radius: 2px; transition: background 0.2s; margin-bottom: 12px; }
+  .study-save-btn:hover { background: var(--gold); }
+  .study-filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .study-filter-btn { padding: 3px 8px; font-size: 9px; font-family: 'Share Tech Mono', monospace; border-radius: 2px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; transition: all 0.2s; }
+  .study-filter-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(41,128,185,0.08); }
+  .study-filter-btn:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+  .study-entries { display: flex; flex-direction: column; gap: 6px; }
+  .study-entry { background: var(--bg); border: 1px solid var(--border); border-left: 3px solid var(--blue); border-radius: 2px; padding: 10px 14px; animation: fadeIn 0.4s ease; position: relative; }
+  .study-entry .se-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .study-entry .se-date { font-size: 10px; color: var(--gold-dim); font-family: 'Share Tech Mono', monospace; }
+  .study-entry .se-cat { font-size: 9px; font-family: 'Share Tech Mono', monospace; padding: 1px 6px; border-radius: 2px; letter-spacing: 1px; color: var(--blue); background: rgba(41,128,185,0.1); border: 1px solid rgba(41,128,185,0.3); }
+  .study-entry .se-dur { font-size: 9px; font-family: 'Share Tech Mono', monospace; color: var(--gold-dim); }
+  .study-entry .se-text { font-size: 12px; color: var(--text); line-height: 1.7; }
+  .study-entry .se-delete { position: absolute; top: 6px; right: 8px; background: none; border: none; color: var(--border); cursor: pointer; font-size: 13px; transition: color 0.2s; padding: 2px 4px; }
+  .study-entry .se-delete:hover { color: var(--red); }
+  .study-summary { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .study-summary-card { background: var(--bg); border: 1px solid var(--border); border-radius: 2px; padding: 8px 12px; text-align: center; flex: 1; min-width: 80px; }
+  .study-summary-val { font-size: 18px; font-weight: 900; color: var(--blue); font-family: 'Share Tech Mono', monospace; }
+  .study-summary-lab { font-size: 9px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; }
+
+  /* ── クエスト詳細ポップアップ ── */
+  .quest-detail-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 150; align-items: center; justify-content: center; padding: 20px; }
+  .quest-detail-overlay.open { display: flex; }
+  .quest-detail { background: var(--panel); border: 1px solid var(--gold-dim); padding: 24px; width: 100%; max-width: 500px; border-radius: 4px; max-height: 85vh; overflow-y: auto; }
+  .qd-title { font-size: 15px; font-weight: 900; color: var(--gold); letter-spacing: 1px; line-height: 1.6; margin-bottom: 12px; }
+  .qd-status { display: inline-block; font-size: 10px; font-family: 'Share Tech Mono', monospace; padding: 2px 8px; border-radius: 2px; margin-bottom: 12px; letter-spacing: 1px; }
+  .qd-status.active { color: var(--text-dim); background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+  .qd-status.done { color: var(--green); background: rgba(39,174,96,0.1); border: 1px solid var(--green); }
+  .qd-desc { font-size: 13px; color: var(--text); line-height: 1.9; margin-bottom: 16px; white-space: pre-wrap; background: var(--bg); border: 1px solid var(--border); border-radius: 2px; padding: 14px 16px; }
+  .qd-reward { font-size: 12px; color: var(--gold-dim); font-family: 'Share Tech Mono', monospace; margin-bottom: 12px; }
+  .qd-date { font-size: 11px; color: var(--green); font-family: 'Share Tech Mono', monospace; margin-bottom: 16px; }
+  .qd-btns { display: flex; gap: 8px; }
+  .qd-btn { flex: 1; padding: 11px; font-size: 12px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; cursor: pointer; border-radius: 2px; border: none; transition: all 0.2s; }
+  .qd-btn-close { background: transparent; border: 1px solid var(--border) !important; color: var(--text-dim); }
+  .qd-btn-close:hover { border-color: var(--text-dim) !important; }
+  .qd-btn-toggle { background: var(--gold-dim); color: var(--bg); }
+  .qd-btn-toggle:hover { background: var(--gold); }
+  .qd-btn-undo { background: transparent; border: 1px solid var(--red) !important; color: var(--red); }
+  .qd-btn-undo:hover { background: rgba(192,57,43,0.1); }
+
+  /* ── 討伐確認ダイアログ ── */
+  .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 180; align-items: center; justify-content: center; padding: 20px; }
+  .confirm-overlay.open { display: flex; }
+  .confirm-dialog { background: var(--panel); border: 1px solid var(--gold); padding: 28px; width: 100%; max-width: 400px; border-radius: 4px; text-align: center; }
+  .confirm-icon { font-size: 40px; margin-bottom: 12px; }
+  .confirm-title { font-size: 16px; font-weight: 900; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
+  .confirm-sub { font-size: 12px; color: var(--text-dim); line-height: 1.7; margin-bottom: 8px; }
+  .confirm-quest-name { font-size: 13px; color: var(--text); font-weight: 700; margin-bottom: 16px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 2px; line-height: 1.6; }
+  .confirm-btns { display: flex; gap: 10px; }
+  .confirm-btn { flex: 1; padding: 12px; font-size: 12px; font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; cursor: pointer; border-radius: 2px; border: none; transition: all 0.2s; }
+  .confirm-btn-cancel { background: transparent; border: 1px solid var(--border) !important; color: var(--text-dim); }
+  .confirm-btn-cancel:hover { border-color: var(--text-dim) !important; }
+  .confirm-btn-ok { background: var(--green); color: #fff; }
+  .confirm-btn-ok:hover { background: #2ecc71; }
+
+  /* ── 日報パネル（士気・野営・兵糧・天候） ── */
+  .daily-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .daily-header { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--gold); cursor: pointer; display: flex; justify-content: space-between; user-select: none; }
+  .daily-body { display: none; margin-top: 12px; }
+  .daily-body.open { display: block; }
+  .daily-section { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .daily-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .daily-label { font-size: 11px; color: var(--gold-dim); letter-spacing: 2px; margin-bottom: 6px; font-family: 'Share Tech Mono', monospace; }
+  .daily-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .daily-btn { padding: 5px 10px; font-size: 11px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); border-radius: 2px; cursor: pointer; font-family: 'Share Tech Mono', monospace; transition: all 0.15s; }
+  .daily-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
+  .daily-input-sm { width: 60px; padding: 4px 6px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 12px; text-align: center; border-radius: 2px; font-family: 'Share Tech Mono', monospace; }
+  .daily-save-btn { width: 100%; padding: 10px; margin-top: 8px; background: var(--gold); color: var(--bg); border: none; font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 3px; cursor: pointer; border-radius: 2px; }
+  .daily-entries { margin-top: 12px; }
+  .daily-entry { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; margin-bottom: 6px; font-size: 11px; position: relative; }
+  .daily-entry-date { color: var(--gold-dim); font-family: 'Share Tech Mono', monospace; font-size: 10px; }
+  .daily-entry-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; color: var(--text-dim); }
+  .daily-entry-item { white-space: nowrap; }
+  .daily-entry-del { position: absolute; top: 6px; right: 8px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; opacity: 0.5; }
+  .daily-entry-del:hover { opacity: 1; color: var(--red); }
+  /* 士気バー */
+  .morale-display { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .morale-bar { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+  .morale-fill { height: 100%; transition: width 0.5s; border-radius: 4px; }
+  .morale-val { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--gold); min-width: 30px; text-align: right; }
+
+  /* ── 補給ログ ── */
+  .supply-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .supply-header { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--gold); cursor: pointer; display: flex; justify-content: space-between; user-select: none; }
+  .supply-body { display: none; margin-top: 12px; }
+  .supply-body.open { display: block; }
+  .supply-input-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+  .supply-input { padding: 5px 8px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 12px; border-radius: 2px; font-family: 'Share Tech Mono', monospace; }
+  .supply-input-amount { width: 80px; text-align: right; }
+  .supply-input-desc { flex: 1; min-width: 120px; }
+  .supply-cat-btn { padding: 4px 8px; font-size: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); border-radius: 2px; cursor: pointer; font-family: 'Share Tech Mono', monospace; }
+  .supply-cat-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
+  .supply-save-btn { width: 100%; padding: 10px; background: var(--gold); color: var(--bg); border: none; font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 2px; cursor: pointer; border-radius: 2px; }
+  .supply-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .supply-summary-card { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px; text-align: center; }
+  .supply-summary-val { font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--gold); }
+  .supply-summary-lab { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+  .supply-entry { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; margin-bottom: 4px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+  .supply-entry-left { display: flex; gap: 8px; align-items: center; flex: 1; }
+  .supply-entry-cat { font-size: 10px; color: var(--gold-dim); }
+  .supply-entry-desc { color: var(--text-dim); }
+  .supply-entry-amt { font-family: 'Share Tech Mono', monospace; color: var(--red); font-size: 12px; }
+  .supply-entry-del { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; opacity: 0.5; margin-left: 8px; }
+  .supply-entry-del:hover { opacity: 1; color: var(--red); }
+  .supply-entries { max-height: 250px; overflow-y: auto; }
+
+  /* ── 遠征記録 ── */
+  .expedition-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .expedition-header { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--gold); cursor: pointer; display: flex; justify-content: space-between; user-select: none; }
+  .expedition-body { display: none; margin-top: 12px; }
+  .expedition-body.open { display: block; }
+  .exp-entry { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; margin-bottom: 4px; font-size: 11px; position: relative; }
+  .exp-entry-route { color: var(--gold); font-family: 'Share Tech Mono', monospace; }
+  .exp-entry-act { color: var(--text-dim); margin-top: 2px; }
+  .exp-entry-del { position: absolute; top: 4px; right: 6px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; opacity: 0.5; }
+  .exp-entries { max-height: 200px; overflow-y: auto; }
+
+  /* ── 同盟ログ ── */
+  .alliance-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .alliance-header { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--gold); cursor: pointer; display: flex; justify-content: space-between; user-select: none; }
+  .alliance-body { display: none; margin-top: 12px; }
+  .alliance-body.open { display: block; }
+  .ally-entry { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; margin-bottom: 4px; font-size: 11px; position: relative; }
+  .ally-entry-type { font-size: 10px; color: var(--gold-dim); }
+  .ally-entry-name { color: var(--gold); }
+  .ally-entry-note { color: var(--text-dim); margin-top: 2px; }
+  .ally-entry-del { position: absolute; top: 4px; right: 6px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; opacity: 0.5; }
+  .ally-entries { max-height: 200px; overflow-y: auto; }
+
+  /* ── 闘技場（テニス＋運動） ── */
+  .arena-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .arena-header { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--gold); cursor: pointer; display: flex; justify-content: space-between; user-select: none; }
+  .arena-body { display: none; margin-top: 12px; }
+  .arena-body.open { display: block; }
+  .arena-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .arena-summary-card { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px; text-align: center; }
+  .arena-summary-val { font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--gold); }
+  .arena-summary-lab { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+  .arena-entry { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; margin-bottom: 4px; font-size: 11px; position: relative; }
+  .arena-entry-type { color: var(--gold); font-family: 'Share Tech Mono', monospace; }
+  .arena-entry-detail { color: var(--text-dim); margin-top: 2px; }
+  .arena-entry-del { position: absolute; top: 4px; right: 6px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; opacity: 0.5; }
+  .arena-entries { max-height: 200px; overflow-y: auto; }
+
+  /* ── クイズ道場 ── */
+  .quiz-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+  .quiz-header { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--gold); cursor: pointer; display: flex; justify-content: space-between; user-select: none; }
+  .quiz-body { display: none; margin-top: 12px; }
+  .quiz-body.open { display: block; }
+  .quiz-cat-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .quiz-diff-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .quiz-start-btn { width: 100%; padding: 12px; background: var(--gold); color: var(--bg); border: none; font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 3px; cursor: pointer; border-radius: 2px; margin-bottom: 12px; }
+  .quiz-area { display: none; }
+  .quiz-area.active { display: block; }
+  .quiz-question { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 14px; margin-bottom: 10px; }
+  .quiz-q-num { font-size: 10px; color: var(--gold-dim); font-family: 'Share Tech Mono', monospace; margin-bottom: 4px; }
+  .quiz-q-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+  .quiz-options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .quiz-opt { padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); cursor: pointer; font-size: 12px; transition: all 0.15s; }
+  .quiz-opt:hover { border-color: var(--gold); color: var(--text); }
+  .quiz-opt.correct { border-color: var(--green); color: var(--green); background: rgba(46,204,113,0.1); }
+  .quiz-opt.wrong { border-color: var(--red); color: var(--red); background: rgba(231,76,60,0.1); }
+  .quiz-opt.disabled { pointer-events: none; }
+  .quiz-explain { display: none; background: rgba(201,168,76,0.05); border: 1px solid var(--gold-dim); border-radius: 3px; padding: 10px 12px; margin-bottom: 10px; font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+  .quiz-explain.show { display: block; }
+  .quiz-next-btn { width: 100%; padding: 10px; background: transparent; border: 1px solid var(--gold); color: var(--gold); font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 2px; cursor: pointer; border-radius: 2px; }
+  .quiz-result { text-align: center; padding: 20px; }
+  .quiz-result-score { font-family: 'Share Tech Mono', monospace; font-size: 28px; color: var(--gold); }
+  .quiz-result-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .quiz-result-rank { font-size: 14px; color: var(--gold); margin-top: 8px; }
+  .quiz-share-btn { margin-top: 12px; padding: 10px 20px; background: #1da1f2; color: #fff; border: none; font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 2px; cursor: pointer; border-radius: 2px; }
+  .quiz-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .quiz-stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 8px; text-align: center; }
+  .quiz-stat-val { font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--gold); }
+  .quiz-stat-lab { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+
+</style>
+</head>
+<body>
+
+<!-- 達成演出 -->
+<div class="celebration-overlay" id="cel-overlay" onclick="closeCelebration()">
+  <div class="cel-bear-big">🤍</div>
+  <div class="cel-title" id="cel-title">QUEST CLEARED！</div>
+  <div class="cel-sub" id="cel-sub"></div>
+  <div class="cel-reward" id="cel-reward"></div>
+  <button class="cel-close" onclick="closeCelebration()">次の戦いへ ⚔</button>
+</div>
+
+<!-- クエスト詳細ポップアップ -->
+<div class="quest-detail-overlay" id="qd-overlay">
+  <div class="quest-detail">
+    <div class="qd-title" id="qd-title"></div>
+    <div class="qd-status" id="qd-status"></div>
+    <div class="qd-desc" id="qd-desc"></div>
+    <div class="qd-reward" id="qd-reward"></div>
+    <div class="qd-date" id="qd-date"></div>
+    <div class="qd-btns" id="qd-btns"></div>
+  </div>
+</div>
+
+<!-- 討伐確認ダイアログ -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-icon">⚔</div>
+    <div class="confirm-title" id="confirm-title">討伐完了を報告する？</div>
+    <div class="confirm-sub" id="confirm-sub">この作戦は確かに完了した。嘘は許されない。</div>
+    <div class="confirm-quest-name" id="confirm-quest-name"></div>
+    <div class="confirm-btns">
+      <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirm()">キャンセル</button>
+      <button class="confirm-btn confirm-btn-ok" onclick="executeToggle()">⚔ 討伐完了</button>
+    </div>
+  </div>
+</div>
+
+<!-- コピートースト -->
+<div class="toast" id="toast">クリップボードにコピーした。Xに貼り付けろ。</div>
+
+<!-- ヘッダー -->
+<div class="header">
+  <!-- クマ＋白ローブ（喜怒哀楽対応） -->
+  <div class="robe-bear" id="robe-bear" onclick="bearSmash()" title="クマをタップ！">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- 白ローブ（体） -->
+      <path d="M22 58 Q17 72 15 88 Q18 100 50 100 Q82 100 85 88 Q83 72 78 58 Z" fill="#e8e4dc"/>
+      <path d="M25 60 Q21 72 19 86 Q22 96 50 96 Q78 96 81 86 Q79 72 75 60 Z" fill="#f0ece4"/>
+      <line x1="50" y1="60" x2="50" y2="98" stroke="#d8d4cc" stroke-width="0.8"/>
+      <!-- フード内側 -->
+      <path d="M28 52 Q30 56 50 58 Q70 56 72 52 L70 50 Q50 54 30 50 Z" fill="#8B2020" opacity="0.5"/>
+      <!-- フード -->
+      <path d="M20 48 Q18 28 50 18 Q82 28 80 48 Q78 58 50 60 Q22 58 20 48 Z" fill="#ddd9d0"/>
+      <path d="M24 48 Q23 32 50 22 Q77 32 76 48 Q74 56 50 58 Q26 56 24 48 Z" fill="#ece8e0"/>
+
+      <!-- 耳（大きい丸・濃い茶色） -->
+      <circle cx="29" cy="22" r="9" fill="#7B5B3A"/>
+      <circle cx="71" cy="22" r="9" fill="#7B5B3A"/>
+      <!-- 耳の内側（さらに濃い茶色） -->
+      <circle cx="30" cy="23" r="5" fill="#5C3D1E"/>
+      <circle cx="70" cy="23" r="5" fill="#5C3D1E"/>
+
+      <!-- 顔（大きな丸・茶色） -->
+      <ellipse cx="50" cy="42" rx="21" ry="19" fill="#9B7B52"/>
+
+      <!-- マズル（大きめ楕円・明るい茶色） -->
+      <ellipse cx="50" cy="49" rx="12" ry="9" fill="#B89B6E"/>
+
+      <!-- ===== 表情パーツ（JSで差し替え） ===== -->
+      <g id="bear-face">
+        <!-- デフォルト：にっこり -->
+        <!-- 目（楕円・鼻の上方） -->
+        <ellipse cx="40" cy="38" rx="3" ry="3.5" fill="#3D2515"/>
+        <ellipse cx="60" cy="38" rx="3" ry="3.5" fill="#3D2515"/>
+        <!-- 鼻（逆三角・濃い茶色） -->
+        <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+        <!-- 口（ω型） -->
+        <path d="M46 50 Q48 53 50 50 Q52 53 54 50" stroke="#3D2515" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+        <!-- ほっぺ（ピンク） -->
+        <circle cx="34" cy="48" r="4" fill="#F5B0BD" opacity="0.6"/>
+        <circle cx="66" cy="48" r="4" fill="#F5B0BD" opacity="0.6"/>
+      </g>
+
+      <!-- 手（袖から覗く） -->
+      <ellipse cx="30" cy="84" rx="7" ry="5" fill="#9B7B52" transform="rotate(-10 30 84)"/>
+      <ellipse cx="70" cy="84" rx="7" ry="5" fill="#9B7B52" transform="rotate(10 70 84)"/>
+    </svg>
+  </div>
+
+  <h1>解放戦記<br>クエストログ</h1>
+  <div class="subtitle">奴隷ソルジャー医.Ryu ／ LIBERATION WAR CHRONICLES</div>
+</div>
+
+<!-- 三軸成長システム -->
+<div class="growth-panel">
+  <div class="growth-header">⚔ 三軸成長システム ── 三つが揃って、真のフリーソルジャー医</div>
+  <div class="growth-axes" id="growth-axes"></div>
+</div>
+
+<!-- 今日の格言 -->
+<div class="quote-panel" id="quote-panel">
+  <div class="quote-header">
+    <span class="qh-icon">🐻</span>
+    <span class="qh-label">今日の格言 ── タップで次へ</span>
+    <span class="qh-tag" id="quote-category"></span>
+  </div>
+  <div class="quote-text" id="quote-text" onclick="nextQuote()"></div>
+  <div class="quote-tag-line" id="quote-hashtag"></div>
+  <div class="quote-actions">
+    <button class="qa-btn tweet-btn" onclick="tweetQuote()">𝕏 Xに投稿する</button>
+    <button class="qa-btn copy-btn" onclick="copyQuote()">コピー</button>
+    <button class="qa-btn" onclick="nextQuote()">次の格言 →</button>
+  </div>
+</div>
+
+<!-- HP / MP パネル -->
+<div class="vital-panel">
+  <div class="vital-title">⚔ VITAL STATUS ── 今日の戦闘力</div>
+  <div class="vital-grid">
+
+    <!-- HP -->
+    <div class="vital-card">
+      <div class="vital-card-header">
+        <span class="vital-card-name">❤ HP</span>
+        <span class="vital-card-sub">睡眠 × 疲労感</span>
+      </div>
+      <div class="vital-pct hp" id="hp-pct-display">──</div>
+      <div class="vital-bar-wrap">
+        <div class="vital-bar-bg"><div class="vital-bar-fill vital-bar-hp" id="hp-bar" style="width:0%"></div></div>
+      </div>
+      <div class="vital-status-text" id="hp-status-text" style="color:var(--text-dim)">── 未記録</div>
+      <div class="vital-inputs">
+        <div class="vital-input-row">
+          <span class="vital-input-label">💤 睡眠</span>
+          <input type="range" class="vital-slider hp-slider" id="hp-sleep" min="0" max="10" value="7" oninput="updateVital('hp')">
+          <span class="vital-val" id="hp-sleep-val">7h</span>
+        </div>
+        <div class="vital-input-row">
+          <span class="vital-input-label">😤 疲労感</span>
+          <input type="range" class="vital-slider hp-slider" id="hp-fatigue" min="0" max="10" value="3" oninput="updateVital('hp')">
+          <span class="vital-val" id="hp-fatigue-val">3</span>
+        </div>
+      </div>
+      <button class="vital-save-btn" onclick="saveVital('hp')">戦場に刻む ⚔</button>
+    </div>
+
+    <!-- MP -->
+    <div class="vital-card">
+      <div class="vital-card-header">
+        <span class="vital-card-name">💙 MP</span>
+        <span class="vital-card-sub">集中力・思考の切れ味</span>
+      </div>
+      <div class="vital-pct mp" id="mp-pct-display">──</div>
+      <div class="vital-bar-wrap">
+        <div class="vital-bar-bg"><div class="vital-bar-fill vital-bar-mp" id="mp-bar" style="width:0%"></div></div>
+      </div>
+      <div class="vital-status-text" id="mp-status-text" style="color:var(--text-dim)">── 未記録</div>
+      <div class="vital-inputs">
+        <div class="vital-input-row">
+          <span class="vital-input-label">🧠 切れ味</span>
+          <input type="range" class="vital-slider mp-slider" id="mp-sharp" min="0" max="10" value="7" oninput="updateVital('mp')">
+          <span class="vital-val" id="mp-sharp-val">7</span>
+        </div>
+        <div class="vital-input-row">
+          <span class="vital-input-label">🌀 霧感</span>
+          <input type="range" class="vital-slider mp-slider" id="mp-fog" min="0" max="10" value="3" oninput="updateVital('mp')">
+          <span class="vital-val" id="mp-fog-val">3</span>
+        </div>
+      </div>
+      <button class="vital-save-btn" onclick="saveVital('mp')">戦場に刻む ⚔</button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- 日報パネル（士気・野営・兵糧・天候） -->
+<div class="daily-panel">
+  <div class="daily-header" onclick="toggleDaily()">
+    📋 日報 ── 戦士のコンディション記録
+    <span id="daily-toggle">▼</span>
+  </div>
+  <div class="daily-body" id="daily-body">
+
+    <div class="daily-section">
+      <div class="daily-label">🔥 士気（メンタル）</div>
+      <div class="daily-row" id="morale-btns"></div>
+      <div class="morale-display" id="morale-display" style="display:none;">
+        <div class="morale-bar"><div class="morale-fill" id="morale-fill"></div></div>
+        <div class="morale-val" id="morale-val"></div>
+      </div>
+    </div>
+
+    <div class="daily-section">
+      <div class="daily-label">🏕 野営（睡眠）</div>
+      <div class="daily-row">
+        <span style="font-size:10px;color:var(--text-dim);">就寝</span>
+        <input type="time" class="daily-input-sm" id="camp-bed" value="23:00" style="width:90px;">
+        <span style="font-size:10px;color:var(--text-dim);">起床</span>
+        <input type="time" class="daily-input-sm" id="camp-wake" value="06:00" style="width:90px;">
+      </div>
+      <div class="daily-row" style="margin-top:6px;">
+        <span style="font-size:10px;color:var(--text-dim);">野営評価</span>
+        <div id="camp-quality-btns"></div>
+      </div>
+    </div>
+
+    <div class="daily-section">
+      <div class="daily-label">🍖 兵糧（食事）</div>
+      <div class="daily-row">
+        <span style="font-size:10px;color:var(--text-dim);min-width:24px;">朝</span>
+        <div id="meal-morning-btns"></div>
+      </div>
+      <div class="daily-row" style="margin-top:4px;">
+        <span style="font-size:10px;color:var(--text-dim);min-width:24px;">昼</span>
+        <div id="meal-noon-btns"></div>
+      </div>
+      <div class="daily-row" style="margin-top:4px;">
+        <span style="font-size:10px;color:var(--text-dim);min-width:24px;">夜</span>
+        <div id="meal-night-btns"></div>
+      </div>
+    </div>
+
+    <div class="daily-section">
+      <div class="daily-label">⛅ 戦場環境（天候）</div>
+      <div class="daily-row" id="weather-btns"></div>
+    </div>
+
+    <button class="daily-save-btn" onclick="saveDailyReport()">⚔ 日報を戦場に刻む</button>
+    <div class="daily-entries" id="daily-entries"></div>
+  </div>
+</div>
+
+<!-- 冒険者ステータス -->
+<div class="stats-panel">
+  <div class="stats-title">冒険者ステータス（タップして更新）</div>
+  <div class="stats-grid" id="stats-grid"></div>
+</div>
+
+<!-- 称号システム -->
+<div class="title-panel">
+  <div class="title-panel-header" onclick="toggleTitles()">
+    称号システム
+    <span class="tp-toggle" id="tp-toggle">▼</span>
+  </div>
+  <div class="current-title-display" id="current-title-display">
+    <span class="ctd-label">装備中の称号</span>
+    <span class="ctd-value" id="equipped-title-name">──</span>
+  </div>
+  <div class="titles-grid" id="titles-grid"></div>
+</div>
+
+<!-- 戦場日誌 -->
+<div class="journal-panel">
+  <div class="journal-header" onclick="toggleJournal()">
+    戦場日誌
+    <span class="jh-toggle" id="jh-toggle">▼</span>
+  </div>
+  <div class="journal-body" id="journal-body">
+    <div class="journal-input-area">
+      <div class="journal-date-row">
+        <span class="journal-date-label">TODAY</span>
+        <span class="journal-date-val" id="journal-today"></span>
+      </div>
+      <div class="journal-hp-row">
+        <span class="journal-date-label" style="margin-right:4px;">HP状態</span>
+        <button class="hp-btn" data-hp="full" onclick="selectHP(this)">◆ FULL</button>
+        <button class="hp-btn" data-hp="good" onclick="selectHP(this)">▲ GOOD</button>
+        <button class="hp-btn" data-hp="low" onclick="selectHP(this)">▼ LOW</button>
+        <button class="hp-btn" data-hp="critical" onclick="selectHP(this)">☠ CRITICAL</button>
+      </div>
+      <textarea class="journal-textarea" id="journal-input" placeholder="今日の戦場を記録せよ。誰も読まない。お前だけの記録だ。"></textarea>
+    </div>
+    <button class="journal-save-btn" onclick="saveJournalEntry()">⚔ 戦場に刻む</button>
+    <div class="journal-entries" id="journal-entries"></div>
+  </div>
+</div>
+
+<!-- 勉強ログ -->
+<div class="study-panel">
+  <div class="study-header" onclick="toggleStudy()">
+    📖 勉強ログ ── 学びを経験値に変換する
+    <span class="sh-toggle" id="sh-toggle">▼</span>
+  </div>
+  <div class="study-body" id="study-body">
+    <div class="study-summary" id="study-summary"></div>
+    <div class="study-input-area">
+      <div class="study-row">
+        <span class="study-row-label">分類</span>
+        <div id="study-cat-btns"></div>
+      </div>
+      <div class="study-row">
+        <span class="study-row-label">時間</span>
+        <input type="number" class="study-dur-input" id="study-dur" placeholder="30" min="1" max="600"> <span style="font-size:10px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">分</span>
+      </div>
+      <input type="text" class="study-input" id="study-input" placeholder="何を学んだ？（例：Claude API の function calling を試した）" maxlength="200">
+    </div>
+    <button class="study-save-btn" onclick="saveStudyEntry()">📖 経験値に変換する</button>
+    <div class="study-filter-row" id="study-filters"></div>
+    <div class="study-entries" id="study-entries"></div>
+  </div>
+</div>
+
+
+<!-- 補給ログ（支出） -->
+<div class="supply-panel">
+  <div class="supply-header" onclick="toggleSupply()">
+    💰 補給ログ ── GOLDの流れを記録する
+    <span id="supply-toggle">▼</span>
+  </div>
+  <div class="supply-body" id="supply-body">
+    <div class="supply-summary" id="supply-summary"></div>
+    <div class="supply-input-row">
+      <input type="number" class="supply-input supply-input-amount" id="supply-amount" placeholder="金額">
+      <span style="font-size:11px;color:var(--text-dim);">円</span>
+    </div>
+    <div class="daily-row" style="margin-bottom:6px;" id="supply-cat-btns"></div>
+    <div class="supply-input-row">
+      <input type="text" class="supply-input supply-input-desc" id="supply-desc" placeholder="内容メモ" maxlength="80">
+    </div>
+    <button class="supply-save-btn" onclick="saveSupplyEntry()">⚔ 補給記録を刻む</button>
+    <div class="supply-entries" id="supply-entries"></div>
+  </div>
+</div>
+
+<!-- 遠征記録（移動） -->
+<div class="expedition-panel">
+  <div class="expedition-header" onclick="toggleExpedition()">
+    🗺 遠征記録 ── 拠点間移動を記録する
+    <span id="exp-toggle">▼</span>
+  </div>
+  <div class="expedition-body" id="exp-body">
+    <div class="daily-row" style="margin-bottom:6px;">
+      <select class="supply-input" id="exp-from" style="flex:1;">
+        <option value="hq">🏠 本陣（奈良）</option>
+        <option value="fwd">🏢 前線基地（大阪）</option>
+        <option value="field">🏥 戦場（職場）</option>
+        <option value="other">📍 その他</option>
+      </select>
+      <span style="color:var(--gold);font-size:14px;">→</span>
+      <select class="supply-input" id="exp-to" style="flex:1;">
+        <option value="field">🏥 戦場（職場）</option>
+        <option value="fwd">🏢 前線基地（大阪）</option>
+        <option value="hq">🏠 本陣（奈良）</option>
+        <option value="other">📍 その他</option>
+      </select>
+    </div>
+    <div class="daily-row" style="margin-bottom:6px;">
+      <select class="supply-input" id="exp-activity" style="flex:1;">
+        <option value="podcast">🎧 行軍中の情報収集</option>
+        <option value="think">💭 作戦思考</option>
+        <option value="study">📖 移動中の学習</option>
+        <option value="rest">😴 休息行軍</option>
+        <option value="music">🎵 士気回復</option>
+        <option value="none">── 特になし</option>
+      </select>
+      <input type="number" class="daily-input-sm" id="exp-minutes" placeholder="分" style="width:50px;">
+      <span style="font-size:10px;color:var(--text-dim);">分</span>
+    </div>
+    <button class="supply-save-btn" onclick="saveExpedition()">⚔ 遠征を記録する</button>
+    <div class="exp-entries" id="exp-entries"></div>
+  </div>
+</div>
+
+<!-- 同盟ログ（人間関係） -->
+<div class="alliance-panel">
+  <div class="alliance-header" onclick="toggleAlliance()">
+    🤝 同盟ログ ── 仲間との交流を記録する
+    <span id="ally-toggle">▼</span>
+  </div>
+  <div class="alliance-body" id="ally-body">
+    <div class="daily-row" style="margin-bottom:6px;" id="ally-type-btns"></div>
+    <div class="daily-row" style="margin-bottom:6px;">
+      <input type="text" class="supply-input" id="ally-name" placeholder="名前/ニックネーム" style="flex:1;" maxlength="30">
+    </div>
+    <div class="daily-row" style="margin-bottom:6px;">
+      <input type="text" class="supply-input" id="ally-note" placeholder="交流メモ（場所・内容）" style="flex:1;" maxlength="100">
+    </div>
+    <button class="supply-save-btn" onclick="saveAllianceEntry()">⚔ 同盟記録を刻む</button>
+    <div class="ally-entries" id="ally-entries"></div>
+  </div>
+</div>
+
+<!-- 闘技場（テニス＋運動） -->
+<div class="arena-panel">
+  <div class="arena-header" onclick="toggleArena()">
+    🎾 闘技場 ── 肉体鍛錬の記録
+    <span id="arena-toggle">▼</span>
+  </div>
+  <div class="arena-body" id="arena-body">
+    <div class="arena-summary" id="arena-summary"></div>
+    <div class="daily-row" style="margin-bottom:6px;" id="arena-type-btns"></div>
+    <div class="daily-row" style="margin-bottom:6px;">
+      <input type="number" class="daily-input-sm" id="arena-duration" placeholder="分" style="width:50px;">
+      <span style="font-size:10px;color:var(--text-dim);">分</span>
+      <div id="arena-intensity-btns" style="display:flex;gap:4px;"></div>
+    </div>
+    <div class="daily-row" style="margin-bottom:6px;" id="arena-result-btns"></div>
+    <div class="daily-row" style="margin-bottom:6px;">
+      <input type="text" class="supply-input" id="arena-note" placeholder="鍛錬メモ" style="flex:1;" maxlength="80">
+    </div>
+    <button class="supply-save-btn" onclick="saveArenaEntry()">⚔ 鍛錬記録を刻む</button>
+    <div class="arena-entries" id="arena-entries"></div>
+  </div>
+</div>
+
+<!-- クイズ道場 -->
+<div class="quiz-panel">
+  <div class="quiz-header" onclick="toggleQuiz()">
+    ❓ クイズ道場 ── 知識を鍛え、Xで挑戦状を叩きつけろ
+    <span id="quiz-toggle">▼</span>
+  </div>
+  <div class="quiz-body" id="quiz-body">
+    <div class="quiz-stats" id="quiz-stats"></div>
+    <div class="daily-label">カテゴリ</div>
+    <div class="quiz-cat-row" id="quiz-cat-btns"></div>
+    <div class="daily-label">難易度</div>
+    <div class="quiz-diff-row" id="quiz-diff-btns"></div>
+    <button class="quiz-start-btn" onclick="startQuiz()">⚔ クイズに挑む</button>
+    <div class="quiz-area" id="quiz-area"></div>
+  </div>
+</div>
+
+<!-- 初コメ製造マシーン -->
+<div class="fcm-panel">
+  <div class="fcm-header" onclick="toggleFCM()">
+    初コメ製造マシーン
+    <span class="fcm-toggle" id="fcm-toggle">▼</span>
+  </div>
+  <div class="fcm-body" id="fcm-body">
+    <div class="fcm-lore">
+      お前の初めてのコメント、俺がもらった。<br>
+      どういたしまして。<br>
+      ── ソルジャー医.Ryu（孤独な最前線より）
+    </div>
+    <div class="fcm-stats-row">
+      <div class="fcm-stat"><div class="fcm-stat-val" id="fcm-gen">0</div><div class="fcm-stat-lab">生成数</div></div>
+      <div class="fcm-stat"><div class="fcm-stat-val" id="fcm-copy">0</div><div class="fcm-stat-lab">コピー数</div></div>
+      <div class="fcm-stat"><div class="fcm-stat-val" id="fcm-tweet-cnt">0</div><div class="fcm-stat-lab">投稿数</div></div>
+    </div>
+    <div class="fcm-pt-tabs">
+      <button class="fcm-pt-btn active" id="fcm-pt-x" onclick="fcmSetPlatform('x')">𝕏 X（Twitter）</button>
+      <button class="fcm-pt-btn" id="fcm-pt-note" onclick="fcmSetPlatform('note')">📝 note</button>
+    </div>
+    <div class="fcm-cat-grid" id="fcm-cat-grid"></div>
+    <button class="fcm-gen-btn" onclick="fcmGenerate()">⚔ 初コメを製造する</button>
+    <div class="fcm-result" id="fcm-result-box">
+      <div class="fcm-placeholder">カテゴリを選んで製造ボタンを叩け。</div>
+    </div>
+    <div class="fcm-action-row" id="fcm-action-row" style="display:none;">
+      <button class="fcm-action-btn fcm-btn-tweet" onclick="fcmTweet()">𝕏 投稿する</button>
+      <button class="fcm-action-btn fcm-btn-copy" onclick="fcmCopyIt()">コピー</button>
+      <button class="fcm-action-btn" onclick="fcmGenerate()">再製造</button>
+    </div>
+  </div>
+</div>
+
+<!-- クエスト一覧 -->
+<div id="chapters-container"></div>
+
+<!-- 討伐ログ -->
+<div class="completed-log">
+  <div class="log-title">── 討伐ログ ──</div>
+  <div class="log-entries" id="log-entries"></div>
+</div>
+
+<div class="footer">
+  昨日も今日も明日も、生涯最前線。<br>
+  ゲームオーバーは、まだ来ない。
+  <div class="bear-sign">🐻 鉄マスクの奥に、クマのワッペン</div>
+  <div style="margin-top:16px; padding:14px 16px; border:1px solid rgba(201,168,76,0.2); border-left: 3px solid var(--gold); background:rgba(201,168,76,0.04); font-size:12px; color:var(--text-dim); line-height:1.9; letter-spacing:1px; text-align:left; font-family:'Noto Serif JP',serif;">
+    どんなに強くなっても。どんなに稼いでも。<br>
+    <span style="color:var(--gold); font-weight:700;">弱き者への優しさだけは、絶対に忘れない。</span><br>
+    <span style="font-size:10px; color:var(--text-dim); font-family:'Share Tech Mono',monospace;">── このプロジェクトの根底に流れる、変わらない核 ──</span>
+  </div>
+</div>
+
+<!-- クエスト追加モーダル -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3>⚔ 新クエスト追加</h3>
+    <select id="quest-chapter"><option value="">── 章を選択 ──</option></select>
+    <input type="text" id="quest-name" placeholder="クエスト名" maxlength="60">
+    <textarea id="quest-desc" rows="2" placeholder="詳細メモ（任意）" maxlength="100"></textarea>
+    <input type="text" id="quest-reward" placeholder="報酬（例：GOLD+50 / TIME+1h）" maxlength="40">
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="addQuest()">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ステータス更新モーダル -->
+<div class="modal-overlay" id="stat-modal-overlay">
+  <div class="modal">
+    <h3 id="stat-modal-title">── ステータス更新 ──</h3>
+    <div class="stat-current-display">
+      <div class="cur-label">現在の値</div>
+      <div class="cur-value" id="stat-modal-current">0</div>
+    </div>
+    <input type="number" id="stat-new-value" placeholder="新しい値を入力" min="0">
+    <div id="stat-milestones" style="margin-top:4px; font-size:10px; color:var(--text-dim); font-family:'Share Tech Mono',monospace; line-height:1.8;"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeStatModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="updateStat()">更新する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'quest_log_ryu_v5';
+
+// ── 格言 ──
+const quotes = [
+  { text: '医師になった瞬間に、誰かが言うべきだった。\n「高収入と自由は、別の話だ」と。\n\n誰も言わなかったから、俺が言う。', tags: '#解放戦記 #医師 #キャリア', category: 'post' },
+  { text: '15年、救急の最前線にいた。\nドクターカーで飛んで、ICUで踏ん張って。\n\nそして気づいた。\n一番消耗していたのは、俺自身だった。', tags: '#解放戦記 #救急医 #燃え尽き症候群', category: 'post' },
+  { text: '研修医へ。\n\n「わからない」と言える勇気が、\n一番の武器だ。\n\nわかったふりをした瞬間に、\n患者が危なくなる。', tags: '#解放戦記 #研修医 #医師', category: 'post' },
+  { text: '患者に転職を勧められた日のことを、\n今も覚えている。\n\n「先生、大丈夫ですか」\n\n診察されていたのは、俺の方だった。', tags: '#解放戦記 #医師あるある #訪問診療', category: 'post' },
+  { text: '医師の手取りが少ない理由は、\n「稼いでいないから」ではない。\n\n「守り方を知らないから」だ。\n\n攻撃力だけ上げても、\nHPは減り続ける。', tags: '#解放戦記 #医師のお金 #節税', category: 'post' },
+  { text: '訪問診療を始めて知った。\n\n「ありがとう」と言われる頻度が、\n救急の10倍になった。\n\n同じ医師が、\n同じ仕事をして。', tags: '#解放戦記 #訪問診療 #医師のキャリア', category: 'post' },
+  { text: '医療AIを現場に入れた。\n\n使ってみてわかったことがある。\nAIは「速く動く」ために使うのではなく、\n「考える時間を作る」ために使うものだ。', tags: '#解放戦記 #医療AI #ChatGPT', category: 'post' },
+  { text: '「忙しいのが医師らしい」\nそう思っていた時期がある。\n\n今は違う。\n\n忙しいのは、\nまだ守りの設計ができていない証拠だ。', tags: '#解放戦記 #医師 #働き方改革', category: 'post' },
+  { text: '高収入なのに貯金がない。\nそれは異常ではない。\n\n医師の9割が通る道だ。\n\n異常なのは、\nそのまま何もしないことだ。', tags: '#解放戦記 #医師のお金 #資産形成', category: 'post' },
+  { text: 'ゴリマッチョのクマのワッペンを\n白衣につけて働いている。\n\n「怖そう」と言われる。\n\n怖くない。\nただ、毎日が戦場なだけだ。', tags: '#解放戦記 #医師あるある #ゾス', category: 'post' },
+  { text: '「やりがい」という言葉を信じて、\nすべてを犠牲にして働いた。\n\n結果、誰にも感謝されず、\n使い捨てられた。\n\nあの経験が、俺をソルジャーにした。', tags: '#解放戦記 #やりがい搾取 #医師', category: 'sharp' },
+  { text: '「やりがい搾取」という言葉がある。\n\n正確には違う。\n搾取ではなく、略奪だ。\n\n命と時間と情熱を、\n「やりがい」という名目で、\n無償で差し出させる行為は、略奪だ。', tags: '#解放戦記 #やりがい搾取 #医療崩壊', category: 'sharp' },
+  { text: '感謝の言葉は、消える。\nお金は、残る。\n\n残るものが、次の戦いの武器になる。', tags: '#解放戦記 #医師のお金 #プロフェッショナル', category: 'sharp' },
+  { text: '燃え尽きた医師を、\n誰も助けなかった。\n\n「もっと頑張れたはずだ」と言われた。\n\n違う。\n燃え尽きる前に守る仕組みがなかっただけだ。', tags: '#解放戦記 #バーンアウト #医師 #働き方', category: 'sharp' },
+  { text: '仕事はお金のためにする。\n\nその代わり、\nもらった分以上の価値を必ず出す。\n\n「お金のため」と「手を抜く」は、\nまったく別の話だ。', tags: '#解放戦記 #プロフェッショナル #医師', category: 'sharp' },
+  { text: '俺はボランティアじゃない。\n\n金をもらうから、\n命をかけて戦える。\n\n対価は、プロの証だ。', tags: '#解放戦記 #医師 #プロフェッショナル', category: 'post' },
+  { text: '無償で動く医師が美談になる国がある。\n\nおかしい。\n\n消防士が「善意で火を消す」とは言わない。\nパイロットが「奉仕で飛ぶ」とは言わない。\n\n医師だけが、なぜか聖人を求められる。', tags: '#解放戦記 #医師 #医療崩壊', category: 'post' },
+  { text: '「先生はお金のことを言わない方がいい」\nそう言われた。\n\nなぜか。\n\nお金の話をしない医師の方が、\n燃え尽きて現場を去っていく。\n\n俺はまだ、ここにいる。', tags: '#解放戦記 #医師のお金 #キャリア', category: 'post' },
+  { text: '俺が金を稼ぐ理由は、\n欲しいものがあるからじゃない。\n\n「いつでも辞められる」という選択肢を、\n手放したくないからだ。\n\n自由は、GOLDで買う。', tags: '#解放戦記 #医師のお金 #FIRE', category: 'post' },
+  { text: '患者を助けたいという気持ちは本物だ。\n\nだから、長く続けたい。\n長く続けるには、消耗しきってはいけない。\n消耗しないためには、守りが要る。\n\n「お金の話」は、「医療への本気の話」だ。', tags: '#解放戦記 #医師 #医療', category: 'post' },
+  { text: '外は怖い、中は優しい。\nそれが俺だ。\n\n鉄マスクの奥に、\nクマのワッペンがある。', tags: '#解放戦記', category: 'inner' },
+  { text: 'ウンコ汁を顔に食らっても、\n続けた男がいる。\n\nお前もそういう男だ。\n\nゾス。', tags: '#解放戦記', category: 'inner' },
+  { text: '解放はまだ先だ。\nでも歩いている。\n\nそれで十分だ。', tags: '#解放戦記', category: 'inner' },
+  { text: '昨日より1ミリだけ前に進めば、\n1年後には365ミリ進んでいる。\n\n積み重ねは、\nゆっくりと、確実に効く。', tags: '#解放戦記', category: 'inner' },
+  { text: '笑いながら戦え。\n泣きながら続けろ。\n\nゲームオーバーは、まだ来ない。', tags: '#解放戦記', category: 'inner' },
+  { text: '残業は悪だ。\n\n長く戦場にいることが強さではない。\n短い時間で最大の結果を出す。\nそれが本物の戦闘力だ。', tags: '#解放戦記 #医師 #働き方改革', category: 'post' },
+  { text: '根性論は嫌いだ。\n\nだが、ここぞという瞬間に\n歯を食いしばる必要があることは知っている。\n\n大事なのは「いつでも根性を出せる状態」を\n保つことだ。\n毎日根性で乗り切ることではない。', tags: '#解放戦記 #医師 #働き方', category: 'post' },
+  { text: '毎ターン全力攻撃するパーティは全滅する。\n\nMP管理ができるパーティが、\n最後まで生き残る。\n\n働き方も同じだ。', tags: '#解放戦記 #医師 #燃え尽き症候群', category: 'post' },
+  { text: '定時で帰ることは、怠慢ではない。\n設計力の証だ。\n\n残業が常態化した戦場は、\n設計が壊れている。\n壊れた設計で戦い続ければ、\n戦士が壊れる。', tags: '#解放戦記 #医師 #働き方改革', category: 'sharp' },
+];
+
+// ── 称号定義 ──
+const titleDefs = [
+  // 初期称号
+  { id: 't_start',    name: '奴隷ソルジャー医',      icon: '⛓',  cond: '最初から装備',              check: () => true },
+  // クエスト数
+  { id: 't_q3',       name: '新米ソルジャー',        icon: '🗡',  cond: 'クエスト3つ完了',           check: (d) => countDone(d) >= 3 },
+  { id: 't_q7',       name: '歴戦の傭兵医',          icon: '⚔',  cond: 'クエスト7つ完了',           check: (d) => countDone(d) >= 7 },
+  { id: 't_q12',      name: '百戦錬磨',              icon: '🛡',  cond: 'クエスト12個完了',          check: (d) => countDone(d) >= 12 },
+  { id: 't_q20',      name: 'ベテランソルジャー',    icon: '👑',  cond: 'クエスト20個完了',          check: (d) => countDone(d) >= 20 },
+  // フォロワー
+  { id: 't_f100',     name: '駆け出し発信者',        icon: '📢',  cond: 'Xフォロワー100人',          check: (d) => d.stats.x_followers.value >= 100 },
+  { id: 't_f300',     name: '注目のソルジャー医',    icon: '📡',  cond: 'Xフォロワー300人',          check: (d) => d.stats.x_followers.value >= 300 },
+  { id: 't_f1000',    name: '千の戦士を率いる者',    icon: '🔥',  cond: 'Xフォロワー1,000人',        check: (d) => d.stats.x_followers.value >= 1000 },
+  { id: 't_f10000',   name: '伝説のソルジャー医',    icon: '⭐',  cond: 'Xフォロワー10,000人',       check: (d) => d.stats.x_followers.value >= 10000 },
+  // 月収
+  { id: 't_g1',       name: '初GOLD稼ぎ',            icon: '💰',  cond: '月収1万円達成',             check: (d) => d.stats.monthly_income.value >= 1 },
+  { id: 't_g33',      name: 'フリーソルジャー見習い',icon: '🗝',  cond: '月収33万円達成（第1解放）', check: (d) => d.stats.monthly_income.value >= 33 },
+  { id: 't_g83',      name: 'フリーソルジャー医',    icon: '🦅',  cond: '月収83万円達成（第2解放）', check: (d) => d.stats.monthly_income.value >= 83 },
+  // メンバーシップ
+  { id: 't_m10',      name: 'ギルド創設者',          icon: '🏰',  cond: 'メンバーシップ10人',        check: (d) => d.stats.note_members.value >= 10 },
+  { id: 't_m100',     name: 'ギルドマスター',        icon: '👑',  cond: 'メンバーシップ100人',       check: (d) => d.stats.note_members.value >= 100 },
+  // 日誌
+  { id: 't_j7',       name: '戦場日誌の記者',        icon: '📓',  cond: '日誌を7日分記録',           check: (d) => (d.journal||[]).length >= 7 },
+  { id: 't_j30',      name: '30日の記録者',          icon: '📚',  cond: '日誌を30日分記録',          check: (d) => (d.journal||[]).length >= 30 },
+  // 特別
+  { id: 't_bear',     name: 'クマ叩き名人',          icon: '🐻',  cond: 'クマを10回叩く',            check: (d) => (d.bearCount||0) >= 10 },
+  { id: 't_freedom',  name: '真のフリーソルジャー医', icon: '🕊',  cond: '累計2,500万円達成（完全解放）', check: (d) => d.stats.monthly_income.value >= 833 },
+];
+
+function countDone(d) {
+  let n = 0;
+  d.chapters.forEach(c => { n += c.quests.filter(q => q.done).length; });
+  return n;
+}
+
+// ── ステータス定義 ──
+const statDefs = [
+  { id: 'x_followers',   label: 'X フォロワー',        unit: '人',  milestones: [100, 300, 700, 1000, 3000, 10000], color: '#1da1f2' },
+  { id: 'note_followers', label: 'note フォロワー',     unit: '人',  milestones: [50, 100, 300, 500, 1000],          color: '#41c9b4' },
+  { id: 'note_members',  label: 'メンバーシップ会員',   unit: '人',  milestones: [10, 30, 50, 100, 300],             color: '#e8854b' },
+  { id: 'monthly_income',label: '月収（副業）',          unit: '万円', milestones: [1, 3, 8, 12, 20, 33, 83],         color: '#c9a84c' },
+  { id: 'san',           label: 'SAN ── 精神的余裕',    unit: '/10', milestones: [3, 5, 7, 9, 10],                   color: '#9b59b6', isSubjective: true, max: 10 },
+  { id: 'time_free',     label: 'TIME ── 可処分時間',   unit: 'h/日', milestones: [1, 2, 3, 5, 8],                   color: '#27ae60' },
+  { id: 'will',          label: 'WILL ── 発信意欲',     unit: '/10', milestones: [3, 5, 7, 9, 10],                   color: '#e67e22', isSubjective: true, max: 10,
+    hint: '「今日も書きたい」という感覚。下がったら休め。上がったら全力で出せ。' },
+];
+
+// ── デフォルトデータ ──
+const defaultData = {
+  stats: {
+    x_followers:   { value: 0, history: [] },
+    note_followers: { value: 0, history: [] },
+    note_members:  { value: 0, history: [] },
+    monthly_income: { value: 0, history: [] },
+    san:           { value: 0, history: [] },
+    time_free:     { value: 0, history: [] },
+    will:          { value: 0, history: [] },
+  },
+  vital: {
+    hp: { sleep: 7, fatigue: 3, pct: null, savedAt: null },
+    mp: { sharp: 7, fog: 3, pct: null, savedAt: null },
+  },
+  equippedTitle: 't_start',
+  bearCount: 0,
+  journal: [],
+  studyLog: [],
+  chapters: [
+    { id: 'c0', title: '第0章：起動準備＆完了実績', quests: [
+      { id: 'q0_done_a', name: '【✅完了】キャラクター設計メモ v5 を完成させる', desc: 'ソルジャー医.Ryuの掟・仕事観・対人姿勢・弱さ開示方針・世界観をすべて確定。解放条件（累計2,500万円）も明文化。', reward: 'EXP+200 / キャラクター確立', done: true, doneAt: '2026-02-24T00:00:00.000Z' },
+      { id: 'q0_done_b', name: '【✅完了】Xプロフィール文を完成させる', desc: '「あの日、白衣を着た瞬間に俺は奴隷になった。」から始まる文章を確定。南国大学医学部卒として半匿名で開示。', reward: 'TRUST+20', done: true, doneAt: '2026-02-24T00:00:00.000Z' },
+      { id: 'q0_done_c', name: '【✅完了】noteプロフィール文を完成させる', desc: '暑苦しく始めてゆる〜く締める構成。「なんくるないさ〜」でキャラの落差を演出。', reward: 'TRUST+15', done: true, doneAt: '2026-02-24T00:00:00.000Z' },
+      { id: 'q0_done_d', name: '【✅完了】noteプロローグ（第0話）を投稿する', desc: '「南国の海が、好きだった」から始まり「集え、戦士達よ」で締める構成。投稿済み。', reward: 'EXP+150 / TRUST+30', done: true, doneAt: '2026-02-24T00:00:00.000Z' },
+      { id: 'q0_done_e', name: '【✅完了】クエストログ（解放戦記管理アプリ）を作る', desc: 'RPG世界観のHTMLアプリ。EXP・ステータス・称号・戦場日誌・HP/MP・格言・初コメマシーンを全て実装。v9まで更新。', reward: 'EXP+300 / 装備：タスク管理の鎧', done: true, doneAt: '2026-02-24T00:00:00.000Z' },
+      { id: 'q0_done_f', name: '【✅完了】今週のX投稿7本（2/24〜3/2）を作成する', desc: '若手5本・中堅1本・ベテラン1本の配分。研修医直前シリーズとして4月仕込みに入る。', reward: 'EXP+80 / TRUST+20', done: true, doneAt: '2026-02-24T00:00:00.000Z' },
+      { id: 'q0_done_g', name: '【✅完了】初コメ製造マシーンを作る', desc: 'シュール自虐全振り。孤独な最前線を笑いながら記録するツール。クエストログに埋め込み済み。', reward: 'SAN+20 / 孤独な最前線勲章', done: true, doneAt: '2026-02-24T00:00:00.000Z' },
+      { id: 'q0a', name: 'Xのプロフィール・アカウント名を確定する', desc: '有料プラン審査通過後に設定。ソルジャー医.Ryuで確定。', reward: 'TRUST+10', done: false, doneAt: null },
+      { id: 'q0b', name: '名刺スレッドを投稿して固定する', desc: '5ツイートのスレッドを連投→ツイート①を固定。自己紹介の旗を立てる。', reward: 'TRUST+20', done: false, doneAt: null },
+      { id: 'q0c', name: '自分の投稿に初コメを残す', desc: 'バレることを恐れるな。バレることをコンテンツにしろ。無音の戦場の記録が伝説になる。初コメ製造マシーンを使え。', reward: 'SAN+10 / EXP+30', done: false, doneAt: null },
+      { id: 'q0d', name: '競合調査クエリをPerplexityに投げる', desc: 'X・noteで伸びた医師アカウントの競合調査。新チャット1で実施。', reward: 'MP+30 / 情報武装', done: false, doneAt: null },
+      { id: 'q0e', name: '研修医直前層の行動分析をPerplexityに投げる', desc: '国試明け・研修医直前層の行動分析。新チャット2で実施。4月仕込みの前提調査。', reward: 'MP+20', done: false, doneAt: null },
+      { id: 'q0f', name: 'コンテンツカレンダー設計をChatGPTに投げる', desc: '新チャット4で実施。3月末までの週次スケジュールを作る。', reward: 'TIME+∞ / 作戦マップ入手', done: false, doneAt: null },
+      { id: 'q0g', name: '第1話構成案・書き出し3パターンをChatGPTに投げる', desc: '新チャット5で実施。書き出しの壁を壊す最速の手。', reward: 'MP+40 / EXP+20', done: false, doneAt: null },
+      { id: 'q0h', name: '医師・医療職の収益化モデル深掘りを三者に投げる', desc: 'Perplexity深い研究（新チャット3）・GPT Deep Research（新チャット6）・Gemini Deep Research（新チャット8）に同じクエリを投げて比較・統合。', reward: 'GOLD知識+100 / 情報武装MAX', done: false, doneAt: null },
+      { id: 'q0i', name: '医師がスタートアップ顧問契約を取る方法をGPTに投げる', desc: '新チャット7でGPT Deep Research。Year3収益の柱候補。', reward: 'GOLD+50 / 新収益ルート発見', done: false, doneAt: null },
+      { id: 'q0j', name: 'VisasQ に登録する', desc: '専門家プロフィールを完成させる。顧問収益の種まき。急がないが早いほど良い。', reward: 'GOLD+30', done: false, doneAt: null },
+      { id: 'q0k', name: '頼めるドクターに登録する', desc: '同様にプロフィール完成まで。', reward: 'GOLD+20', done: false, doneAt: null },
+    ]},
+    { id: 'c1', title: '第1章：メディア起動（Week 1〜4）', quests: [
+      { id: 'q1a', name: 'ペルソナ「駆け出しソルジャー医」を書く', desc: '1人の読者像を一枚紙に書く。第1話執筆の前提', reward: 'MP+20', done: false, doneAt: null },
+      { id: 'q1b', name: 'note 第1話を執筆・公開する', desc: '「なぜ俺はここにいるのか」転身の物語', reward: 'EXP+100 / TRUST+30', done: false, doneAt: null },
+      { id: 'q1c', name: 'Xの曜日固定投稿リズムを始める', desc: '毎日1本・5〜10分・1テーマ1メッセージ', reward: 'SAN+10', done: false, doneAt: null },
+      { id: 'q1d', name: '無料護符「研修医サバイバルチェック10」を作る', desc: '4月1日に向けた拡散用コンテンツ', reward: 'TRUST+40', done: false, doneAt: null },
+      { id: 'q1e', name: 'note 第2話を公開する', desc: '「電話が鳴る夜」当直・救急の不安を手順化', reward: 'EXP+80', done: false, doneAt: null },
+      { id: 'q1f', name: 'note 第3話を公開する', desc: '「勉強してるのに伸びない」の正体', reward: 'EXP+80', done: false, doneAt: null },
+      { id: 'q1g', name: 'note 第4話を公開する', desc: '「置いていかれる夜の処方箋」比べない技術', reward: 'EXP+80', done: false, doneAt: null },
+    ]},
+    { id: 'c2', title: '第2章：山場攻略（3月末〜4月）', quests: [
+      { id: 'q2a', name: '山場note（3/29）を公開する', desc: '「研修医スタート直前：手取りを守る最初の10分」', reward: 'EXP+150 / GOLD+50', done: false, doneAt: null },
+      { id: 'q2b', name: '4/1カウントダウン投稿（3/30・31）', desc: '研修医前夜の不安に刺さる短文2本', reward: 'TRUST+50', done: false, doneAt: null },
+      { id: 'q2c', name: 'Xフォロワー100人を達成する', desc: '最初の壁。ここを超えるとリズムができる', reward: 'LEVEL UP / SAN+30', done: false, doneAt: null },
+    ]},
+    { id: 'c3', title: '第3章：収益基盤（Month 4〜6）', quests: [
+      { id: 'q3a', name: 'フォロワー300人を達成する', desc: 'Year1 Month1-3のマイルストーン', reward: 'LEVEL UP', done: false, doneAt: null },
+      { id: 'q3b', name: '有料テンプレ（スターターパック9,800円）を公開する', desc: '年収ゾーン別基本ムーブ＋社保・税地図', reward: 'GOLD+100', done: false, doneAt: null },
+      { id: 'q3c', name: '初めてのスポット顧問案件を受ける', desc: 'VisasQ等経由。1回2〜7万円の種まき', reward: 'GOLD+70 / TRUST+30', done: false, doneAt: null },
+      { id: 'q3d', name: 'フォロワー700人を達成する', desc: 'Year1 Month4-6のマイルストーン', reward: 'LEVEL UP', done: false, doneAt: null },
+      { id: 'q3e', name: '月収3万円を初めて達成する', desc: '副業収益の最初のマイルストーン', reward: 'GOLD+200 / SAN+50', done: false, doneAt: null },
+    ]},
+    { id: 'c4', title: '第4章：コミュニティ結成（Month 7〜12）', quests: [
+      { id: 'q4a', name: 'noteメンバーシップを開設する', desc: '旅の同行（980円）・ギルド（2,980円）・鍛冶屋（4,980円）', reward: 'GOLD+200 / SAN+20', done: false, doneAt: null },
+      { id: 'q4b', name: 'メンバーシップ会員30人を達成する', desc: 'Year1 Month7-9のマイルストーン', reward: 'LEVEL UP', done: false, doneAt: null },
+      { id: 'q4c', name: '月収12万円を達成する', desc: 'Year1の最終目標。常勤週5→4日への第一歩', reward: 'GOLD+500 / TIME+∞', done: false, doneAt: null },
+      { id: 'q4d', name: '監修・顧問案件を月1〜2件安定させる', desc: '医師監修・コンサル収益の柱を立てる', reward: 'GOLD+300', done: false, doneAt: null },
+    ]},
+    { id: 'c5', title: '第5章：解放への道（Year 2〜3）', quests: [
+      { id: 'q5a', name: '月収33万円を達成する（第1解放）', desc: '常勤を週4日に削減できる。奴隷ソルジャー見習い卒業', reward: 'TIME+1day/week', done: false, doneAt: null },
+      { id: 'q5b', name: 'フォロワー1万人を達成する', desc: '書籍・B2B・メディア出演の扉が開く', reward: 'LEVEL UP / 伝説の称号', done: false, doneAt: null },
+      { id: 'q5c', name: '月収83万円を達成する（第2解放）', desc: '常勤をさらに削減。フリーソルジャー医の称号', reward: 'FREEDOM+1', done: false, doneAt: null },
+      { id: 'q5d', name: '累計副業収益2,500万円を達成する（完全解放）', desc: '常勤1日=年500万円×5日分。これが奴隷卒業の条件。', reward: '奴隷ソルジャー卒業 / FREEDOM+∞ / This is the Way', done: false, doneAt: null },
+    ]},
+  ],
+  dailyReports: [],
+  supplyLog: [],
+  expeditionLog: [],
+  allianceLog: [],
+  arenaLog: [],
+  quizStats: { total: 0, correct: 0, byCategory: {} },
+  log: []
+};
+
+let data;
+let quoteIdx = Math.floor(Math.random() * quotes.length);
+let selectedHP = 'good';
+
+// ── データ管理 ──
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      data = JSON.parse(JSON.stringify(defaultData));
+      if (parsed.stats) Object.keys(parsed.stats).forEach(k => { if (data.stats[k]) data.stats[k] = parsed.stats[k]; });
+      if (parsed.vital) { if (parsed.vital.hp) data.vital.hp = parsed.vital.hp; if (parsed.vital.mp) data.vital.mp = parsed.vital.mp; }
+      if (parsed.equippedTitle) data.equippedTitle = parsed.equippedTitle;
+      if (parsed.bearCount) data.bearCount = parsed.bearCount;
+      if (parsed.journal) data.journal = parsed.journal;
+      if (parsed.studyLog) data.studyLog = parsed.studyLog;
+      parsed.chapters?.forEach(sc => {
+        const dc = data.chapters.find(c => c.id === sc.id);
+        if (dc) {
+          sc.quests?.forEach(sq => { const dq = dc.quests.find(q => q.id === sq.id); if (dq) { dq.done = sq.done; dq.doneAt = sq.doneAt; } });
+          sc.quests?.filter(sq => !dc.quests.find(q => q.id === sq.id)).forEach(sq => dc.quests.push(sq));
+        }
+      });
+      parsed.chapters?.filter(sc => !data.chapters.find(c => c.id === sc.id)).forEach(sc => data.chapters.push(sc));
+      data.log = parsed.log || [];
+    } else {
+      data = JSON.parse(JSON.stringify(defaultData));
+    }
+  } catch(e) { data = JSON.parse(JSON.stringify(defaultData)); }
+}
+function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+// ── 格言 ──
+function renderQuote() {
+  const q = quotes[quoteIdx];
+  document.getElementById('quote-text').innerHTML = q.text.replace(/\n/g, '<br>');
+  document.getElementById('quote-hashtag').textContent = q.tags;
+  document.getElementById('quote-category').textContent =
+    q.category === 'post' ? '📤 投稿向け' :
+    q.category === 'sharp' ? '⚔ 鋭い一言' : '🔒 自分用';
+  document.getElementById('quote-panel').classList.toggle('sharp-mode', q.category === 'sharp');
+}
+function nextQuote() { quoteIdx = (quoteIdx + 1) % quotes.length; renderQuote(); }
+function buildTweetText() { const q = quotes[quoteIdx]; return `${q.text}\n\n${q.tags}\n\n奴隷ソルジャー医.Ryu`; }
+function tweetQuote() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(buildTweetText())}`, '_blank'); }
+function copyQuote() {
+  navigator.clipboard.writeText(buildTweetText()).then(() => {
+    const t = document.getElementById('toast'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500);
+  });
+}
+
+// ── クマ表情パターン ──
+// 目:楕円・離れ気味 鼻:大きい逆三角#3D2515 口:ω型 ほっぺ:ピンク
+const bearFaces = [
+  { // にっこり（デフォルト）
+    name: 'にっこり', svg: `
+    <ellipse cx="40" cy="38" rx="3" ry="3.5" fill="#3D2515"/>
+    <ellipse cx="60" cy="38" rx="3" ry="3.5" fill="#3D2515"/>
+    <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+    <path d="M46 50 Q48 53 50 50 Q52 53 54 50" stroke="#3D2515" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <circle cx="34" cy="48" r="4" fill="#F5B0BD" opacity="0.6"/>
+    <circle cx="66" cy="48" r="4" fill="#F5B0BD" opacity="0.6"/>`
+  },
+  { // キラキラ（大喜び）
+    name: 'キラキラ', svg: `
+    <ellipse cx="40" cy="38" rx="3.5" ry="4" fill="#3D2515"/>
+    <ellipse cx="60" cy="38" rx="3.5" ry="4" fill="#3D2515"/>
+    <circle cx="41" cy="36.5" r="1.3" fill="white" opacity="0.9"/>
+    <circle cx="61" cy="36.5" r="1.3" fill="white" opacity="0.9"/>
+    <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+    <path d="M44 50 Q47 55 50 50 Q53 55 56 50" stroke="#3D2515" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    <circle cx="34" cy="48" r="4.5" fill="#F5B0BD" opacity="0.7"/>
+    <circle cx="66" cy="48" r="4.5" fill="#F5B0BD" opacity="0.7"/>
+    <text x="36" y="33" font-size="5" fill="#c9a84c" opacity="0.7">✦</text>
+    <text x="62" y="33" font-size="5" fill="#c9a84c" opacity="0.7">✦</text>`
+  },
+  { // ムスッ（怒り）
+    name: 'ムスッ', svg: `
+    <ellipse cx="40" cy="39" rx="2.8" ry="3" fill="#3D2515"/>
+    <ellipse cx="60" cy="39" rx="2.8" ry="3" fill="#3D2515"/>
+    <line x1="35" y1="34" x2="43" y2="36" stroke="#5C3D1E" stroke-width="2" stroke-linecap="round"/>
+    <line x1="65" y1="34" x2="57" y2="36" stroke="#5C3D1E" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+    <path d="M45 51 L55 51" stroke="#3D2515" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="34" cy="48" r="3" fill="#F5B0BD" opacity="0.4"/>
+    <circle cx="66" cy="48" r="3" fill="#F5B0BD" opacity="0.4"/>`
+  },
+  { // プンプン（本気怒り）
+    name: 'プンプン', svg: `
+    <ellipse cx="40" cy="40" rx="2.5" ry="2.8" fill="#3D2515"/>
+    <ellipse cx="60" cy="40" rx="2.5" ry="2.8" fill="#3D2515"/>
+    <line x1="34" y1="33" x2="43" y2="37.5" stroke="#5C3D1E" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="66" y1="33" x2="57" y2="37.5" stroke="#5C3D1E" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+    <path d="M45 51 Q50 48 55 51" stroke="#3D2515" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="34" cy="48" r="3.5" fill="#c0392b" opacity="0.2"/>
+    <circle cx="66" cy="48" r="3.5" fill="#c0392b" opacity="0.2"/>
+    <text x="47" y="33" font-size="6" fill="#c0392b" opacity="0.5">💢</text>`
+  },
+  { // しょんぼり
+    name: 'しょんぼり', svg: `
+    <ellipse cx="40" cy="39" rx="2.8" ry="3.2" fill="#3D2515"/>
+    <ellipse cx="60" cy="39" rx="2.8" ry="3.2" fill="#3D2515"/>
+    <line x1="37" y1="34.5" x2="43" y2="36" stroke="#5C3D1E" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="63" y1="34.5" x2="57" y2="36" stroke="#5C3D1E" stroke-width="1.5" stroke-linecap="round"/>
+    <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+    <path d="M46 52 Q50 49 54 52" stroke="#3D2515" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <circle cx="34" cy="48" r="3.5" fill="#F5B0BD" opacity="0.4"/>
+    <circle cx="66" cy="48" r="3.5" fill="#F5B0BD" opacity="0.4"/>`
+  },
+  { // うるうる（泣）
+    name: 'うるうる', svg: `
+    <ellipse cx="40" cy="38" rx="3.5" ry="4.2" fill="#3D2515"/>
+    <ellipse cx="60" cy="38" rx="3.5" ry="4.2" fill="#3D2515"/>
+    <circle cx="41.2" cy="36" r="1.5" fill="white" opacity="0.9"/>
+    <circle cx="61.2" cy="36" r="1.5" fill="white" opacity="0.9"/>
+    <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+    <path d="M47 51 Q50 49 53 51" stroke="#3D2515" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="36" cy="46" rx="2" ry="5" fill="#7BBFDF" opacity="0.25"/>
+    <ellipse cx="64" cy="46" rx="2" ry="5" fill="#7BBFDF" opacity="0.25"/>
+    <circle cx="34" cy="49" r="4" fill="#F5B0BD" opacity="0.5"/>
+    <circle cx="66" cy="49" r="4" fill="#F5B0BD" opacity="0.5"/>`
+  },
+  { // ゾス！（大口）
+    name: 'ゾス！', svg: `
+    <path d="M37 37 Q40 40 43 37" stroke="#3D2515" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M57 37 Q60 40 63 37" stroke="#3D2515" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+    <ellipse cx="50" cy="52" rx="6" ry="4" fill="#3D2515"/>
+    <ellipse cx="50" cy="51.5" rx="4.5" ry="2.5" fill="#8B4040" opacity="0.45"/>
+    <circle cx="34" cy="48" r="4.5" fill="#F5B0BD" opacity="0.65"/>
+    <circle cx="66" cy="48" r="4.5" fill="#F5B0BD" opacity="0.65"/>`
+  },
+  { // ドヤ（半目ニヤリ）
+    name: 'ドヤ', svg: `
+    <ellipse cx="40" cy="38" rx="3.5" ry="2" fill="#3D2515"/>
+    <ellipse cx="60" cy="38" rx="3.5" ry="2" fill="#3D2515"/>
+    <circle cx="41.5" cy="37.5" r="0.8" fill="white" opacity="0.7"/>
+    <circle cx="61.5" cy="37.5" r="0.8" fill="white" opacity="0.7"/>
+    <ellipse cx="50" cy="46" rx="3.5" ry="2.8" fill="#3D2515"/>
+    <path d="M46 50 Q50 52 54 50" stroke="#3D2515" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <circle cx="34" cy="48" r="3.5" fill="#F5B0BD" opacity="0.5"/>
+    <circle cx="66" cy="48" r="3.5" fill="#F5B0BD" opacity="0.5"/>
+    <text x="62" y="33" font-size="5" fill="#c9a84c" opacity="0.5">✧</text>`
+  },
+];
+
+let bearFaceIdx = 0;
+function changeBearFace() {
+  bearFaceIdx = (bearFaceIdx + 1) % bearFaces.length;
+  const faceEl = document.getElementById('bear-face');
+  if (faceEl) faceEl.innerHTML = bearFaces[bearFaceIdx].svg;
+}
+
+// ── クマ ──
+function bearSmash() {
+  data.bearCount = (data.bearCount || 0) + 1;
+  const bear = document.getElementById('robe-bear');
+  bear.classList.add('smash');
+  setTimeout(() => bear.classList.remove('smash'), 400);
+  changeBearFace();
+  if (data.bearCount % 3 === 0) nextQuote();
+  if (data.bearCount % 10 === 0) {
+    data.log.push({ type: 'bear', time: formatDate(new Date().toISOString()), name: 'クマを叩いた', reward: `${data.bearCount}回目 ゾス（${bearFaces[bearFaceIdx].name}）` });
+  }
+  saveData(); renderLog(); checkTitles();
+}
+
+// ── ステータス ──
+function renderStats() {
+  document.getElementById('stats-grid').innerHTML = statDefs.map(def => {
+    const stat = data.stats[def.id];
+    const v = stat.value;
+    const max = def.max || null;
+    const next = def.milestones.find(m => m > v) || null;
+    const reached = [...def.milestones].reverse().find(m => m <= v) || null;
+    const pct = max ? Math.min((v / max) * 100, 100) : (next ? Math.min((v / next) * 100, 100) : 100);
+    const hist = stat.history.slice(-3).map(h => `${h.v}${def.unit}`).join(' → ');
+    const dv = def.id === 'monthly_income' ? (v % 1 === 0 ? v : v.toFixed(1)) : v.toLocaleString();
+    return `<div class="stat-card" onclick="openStatModal('${def.id}')">
+      <div class="sc-edit-hint">✎ 更新</div>
+      <div class="sc-label">${def.label}</div>
+      <div class="sc-value">${dv}<span class="sc-unit">${def.unit}</span></div>
+      ${def.hint ? `<div style="font-size:9px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-top:4px;line-height:1.5;opacity:0.7;">${def.hint}</div>` : ''}
+      ${reached ? `<div class="milestone-badge reached">✓ ${reached}${def.unit}</div>` : ''}
+      ${next ? `<div class="milestone-badge next">NEXT: ${next}${def.unit}</div>` : '<div class="milestone-badge reached">MAX!</div>'}
+      <div class="sc-bar-bg"><div class="sc-bar-fill" style="width:${pct}%;background:${def.color};"></div></div>
+      ${hist ? `<div class="sc-history">履歴: ${hist}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+let currentStatId = null;
+function openStatModal(sid) {
+  currentStatId = sid;
+  const def = statDefs.find(d => d.id === sid);
+  const stat = data.stats[sid];
+  document.getElementById('stat-modal-title').textContent = `⚔ ${def.label} を更新する`;
+  document.getElementById('stat-modal-current').textContent = `${stat.value}${def.unit}`;
+  document.getElementById('stat-new-value').value = '';
+  document.getElementById('stat-milestones').innerHTML = 'マイルストーン：' + def.milestones.map(m =>
+    `<span style="color:${stat.value>=m?'var(--green)':'var(--text-dim)'};">${stat.value>=m?'✓':'○'} ${m}${def.unit}</span>`).join('　');
+  document.getElementById('stat-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('stat-new-value').focus(), 100);
+}
+function closeStatModal() { document.getElementById('stat-modal-overlay').classList.remove('open'); currentStatId = null; }
+function updateStat() {
+  const nv = parseFloat(document.getElementById('stat-new-value').value);
+  if (isNaN(nv) || nv < 0) { alert('正しい値を入力してください'); return; }
+  const def = statDefs.find(d => d.id === currentStatId);
+  const stat = data.stats[currentStatId];
+  const ov = stat.value;
+  const newlyReached = def.milestones.filter(m => m <= nv && m > ov);
+  stat.history.push({ v: nv, t: new Date().toISOString() });
+  if (stat.history.length > 10) stat.history.shift();
+  stat.value = nv;
+  data.log.push({ type: 'stat', time: formatDate(new Date().toISOString()), name: def.label,
+    reward: `${ov}${def.unit} → ${nv}${def.unit}${newlyReached.length ? ' 🎉 ' + newlyReached.map(m=>m+def.unit).join(',') + '突破！' : ''}` });
+  saveData(); closeStatModal(); renderStats(); renderLog(); checkTitles(); renderGrowthAxes();
+  if (newlyReached.length) setTimeout(() => showCelebration(`${def.label} ${newlyReached.map(m=>m+def.unit).join(', ')} 突破！`, '🎉 マイルストーン達成！', `GOLD+${newlyReached.length*100}`), 300);
+}
+
+// ── 称号システム ──
+function getUnlockedTitles() {
+  return titleDefs.filter(t => t.check(data));
+}
+function checkTitles() {
+  const prev = data.unlockedTitles || [];
+  const now = getUnlockedTitles().map(t => t.id);
+  const newOnes = now.filter(id => !prev.includes(id));
+  data.unlockedTitles = now;
+  if (newOnes.length) {
+    newOnes.forEach(id => {
+      const t = titleDefs.find(x => x.id === id);
+      data.log.push({ type: 'title', time: formatDate(new Date().toISOString()), name: `称号解放：${t.icon} ${t.name}`, reward: 'NEW TITLE UNLOCKED' });
+      setTimeout(() => showCelebration(`${t.icon} ${t.name}`, '称号を解放した！', 'NEW TITLE UNLOCKED'), 400);
+    });
+    saveData(); renderLog();
+  }
+  renderTitles();
+}
+function renderTitles() {
+  const unlocked = getUnlockedTitles().map(t => t.id);
+  const equipped = data.equippedTitle;
+  const equippedDef = titleDefs.find(t => t.id === equipped);
+  document.getElementById('equipped-title-name').textContent = equippedDef ? `${equippedDef.icon} ${equippedDef.name}` : '──';
+  document.getElementById('titles-grid').innerHTML = titleDefs.map(t => {
+    const isUnlocked = unlocked.includes(t.id);
+    const isEquipped = t.id === equipped;
+    return `<div class="title-card ${isUnlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}"
+      onclick="${isUnlocked ? `equipTitle('${t.id}')` : ''}">
+      <div class="tc-lock">${isEquipped ? '✦' : isUnlocked ? '◆' : '🔒'}</div>
+      <div class="tc-name">${t.icon} ${t.name}</div>
+      <div class="tc-cond">${t.cond}</div>
+      ${isEquipped ? '<div class="equipped-badge">装備中</div>' : ''}
+    </div>`;
+  }).join('');
+}
+function equipTitle(id) {
+  data.equippedTitle = id;
+  saveData(); renderTitles();
+}
+function toggleTitles() {
+  const grid = document.getElementById('titles-grid');
+  const toggle = document.getElementById('tp-toggle');
+  grid.classList.toggle('open'); toggle.classList.toggle('open');
+}
+
+// ── HP / MP Vital ──
+const hpStatusMap = [
+  { min: 85, label: 'HP FULL ── 最高の戦闘力', color: '#27ae60' },
+  { min: 65, label: 'HP GOOD ── 問題なく戦える', color: '#2ecc71' },
+  { min: 45, label: 'HP CAUTION ── 無理するな', color: '#f39c12' },
+  { min: 25, label: 'HP LOW ── 守りを固めろ', color: '#e67e22' },
+  { min: 0,  label: 'HP CRITICAL ── 今日は休め', color: '#c0392b' },
+];
+const mpStatusMap = [
+  { min: 85, label: 'MP FULL ── 今日は書ける', color: '#2980b9' },
+  { min: 65, label: 'MP GOOD ── 集中できる', color: '#3498db' },
+  { min: 45, label: 'MP CAUTION ── 短文に絞れ', color: '#9b59b6' },
+  { min: 25, label: 'MP LOW ── インプットに切り替えろ', color: '#8e44ad' },
+  { min: 0,  label: 'MP CRITICAL ── 今日は休め', color: '#6c3483' },
+];
+
+function calcHpPct(sleep, fatigue) {
+  // 睡眠：0-10h → 0-70pt（8hで満点）
+  const sleepPt = Math.min(sleep / 8, 1) * 70;
+  // 疲労感：0=疲れなし→30pt、10=最大疲労→0pt
+  const fatiguePt = ((10 - fatigue) / 10) * 30;
+  return Math.round(sleepPt + fatiguePt);
+}
+function calcMpPct(sharp, fog) {
+  // 切れ味：0-10 → 0-70pt
+  const sharpPt = (sharp / 10) * 70;
+  // 霧感：0=霧なし→30pt、10=最大の霧→0pt
+  const fogPt = ((10 - fog) / 10) * 30;
+  return Math.round(sharpPt + fogPt);
+}
+
+function updateVital(type) {
+  if (type === 'hp') {
+    const sleep = parseInt(document.getElementById('hp-sleep').value);
+    const fatigue = parseInt(document.getElementById('hp-fatigue').value);
+    document.getElementById('hp-sleep-val').textContent = sleep + 'h';
+    document.getElementById('hp-fatigue-val').textContent = fatigue;
+    const pct = calcHpPct(sleep, fatigue);
+    document.getElementById('hp-bar').style.width = pct + '%';
+    document.getElementById('hp-pct-display').textContent = pct + '%';
+    const s = hpStatusMap.find(x => pct >= x.min);
+    document.getElementById('hp-status-text').textContent = s.label;
+    document.getElementById('hp-status-text').style.color = s.color;
+    // スライダーの色更新
+    document.getElementById('hp-sleep').style.setProperty('--pct', (sleep/10*100)+'%');
+    document.getElementById('hp-fatigue').style.setProperty('--pct', (fatigue/10*100)+'%');
+  } else {
+    const sharp = parseInt(document.getElementById('mp-sharp').value);
+    const fog = parseInt(document.getElementById('mp-fog').value);
+    document.getElementById('mp-sharp-val').textContent = sharp;
+    document.getElementById('mp-fog-val').textContent = fog;
+    const pct = calcMpPct(sharp, fog);
+    document.getElementById('mp-bar').style.width = pct + '%';
+    document.getElementById('mp-pct-display').textContent = pct + '%';
+    const s = mpStatusMap.find(x => pct >= x.min);
+    document.getElementById('mp-status-text').textContent = s.label;
+    document.getElementById('mp-status-text').style.color = s.color;
+  }
+}
+
+function saveVital(type) {
+  if (type === 'hp') {
+    const sleep = parseInt(document.getElementById('hp-sleep').value);
+    const fatigue = parseInt(document.getElementById('hp-fatigue').value);
+    const pct = calcHpPct(sleep, fatigue);
+    data.vital.hp = { sleep, fatigue, pct, savedAt: new Date().toISOString() };
+    data.log.push({ type: 'stat', time: formatDate(new Date().toISOString()), name: 'HP 記録', reward: `睡眠${sleep}h × 疲労${fatigue} → HP ${pct}%` });
+  } else {
+    const sharp = parseInt(document.getElementById('mp-sharp').value);
+    const fog = parseInt(document.getElementById('mp-fog').value);
+    const pct = calcMpPct(sharp, fog);
+    data.vital.mp = { sharp, fog, pct, savedAt: new Date().toISOString() };
+    data.log.push({ type: 'stat', time: formatDate(new Date().toISOString()), name: 'MP 記録', reward: `切れ味${sharp} × 霧${fog} → MP ${pct}%` });
+  }
+  saveData(); renderLog();
+  const t = document.getElementById('toast');
+  t.textContent = type.toUpperCase() + ' を戦場に刻んだ。ゾス。';
+  t.classList.add('show');
+  setTimeout(() => { t.classList.remove('show'); t.textContent = 'クリップボードにコピーした。Xに貼り付けろ。'; }, 2200);
+}
+
+function initVital() {
+  const hp = data.vital?.hp;
+  const mp = data.vital?.mp;
+  if (hp && hp.pct !== null) {
+    document.getElementById('hp-sleep').value = hp.sleep;
+    document.getElementById('hp-fatigue').value = hp.fatigue;
+    updateVital('hp');
+  } else { updateVital('hp'); }
+  if (mp && mp.pct !== null) {
+    document.getElementById('mp-sharp').value = mp.sharp;
+    document.getElementById('mp-fog').value = mp.fog;
+    updateVital('mp');
+  } else { updateVital('mp'); }
+}
+
+// ── 戦場日誌 ──
+function toggleJournal() {
+  const body = document.getElementById('journal-body');
+  const toggle = document.getElementById('jh-toggle');
+  body.classList.toggle('open'); toggle.classList.toggle('open');
+}
+function selectHP(btn) {
+  document.querySelectorAll('.hp-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedHP = btn.dataset.hp;
+}
+function saveJournalEntry() {
+  const text = document.getElementById('journal-input').value.trim();
+  if (!text) { alert('何か書いてから刻め。'); return; }
+  const entry = {
+    id: Date.now(),
+    date: formatDate(new Date().toISOString()),
+    hp: selectedHP,
+    text
+  };
+  data.journal.unshift(entry);
+  document.getElementById('journal-input').value = '';
+  saveData(); renderJournal(); checkTitles();
+  const t = document.getElementById('toast');
+  t.textContent = '戦場に刻んだ。'; t.classList.add('show');
+  setTimeout(() => { t.classList.remove('show'); t.textContent = 'クリップボードにコピーした。Xに貼り付けろ。'; }, 2000);
+}
+function deleteJournalEntry(id) {
+  data.journal = data.journal.filter(e => e.id !== id);
+  saveData(); renderJournal();
+}
+const hpLabels = { full: 'HP FULL', good: 'HP GOOD', low: 'HP LOW', critical: 'HP CRITICAL' };
+const hpClasses = { full: 'hp-full', good: 'hp-good', low: 'hp-low', critical: 'hp-critical' };
+function renderJournal() {
+  document.getElementById('journal-today').textContent = formatDate(new Date().toISOString()).split(' ')[0];
+  const el = document.getElementById('journal-entries');
+  if (!data.journal.length) {
+    el.innerHTML = '<div class="journal-empty">まだ記録がない。今日の戦場を刻め。</div>'; return;
+  }
+  el.innerHTML = data.journal.slice(0, 50).map(e => `
+    <div class="journal-entry">
+      <div class="je-top">
+        <span class="je-date">${e.date}</span>
+        <span class="je-hp ${hpClasses[e.hp] || 'hp-good'}">${hpLabels[e.hp] || 'HP GOOD'}</span>
+      </div>
+      <div class="je-text">${e.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <button class="je-delete" onclick="deleteJournalEntry(${e.id});event.stopPropagation()">✕</button>
+    </div>`).join('');
+}
+
+// ── 達成演出 ──
+function showCelebration(sub, title, reward) {
+  document.getElementById('cel-title').textContent = title || 'QUEST CLEARED！';
+  document.getElementById('cel-sub').textContent = sub || '';
+  document.getElementById('cel-reward').textContent = '▶ ' + (reward || '報酬獲得');
+  document.getElementById('cel-overlay').classList.add('open');
+}
+function closeCelebration() { document.getElementById('cel-overlay').classList.remove('open'); }
+
+// ── クエスト ──
+function countAll() {
+  let total=0, done=0;
+  data.chapters.forEach(c => { total+=c.quests.length; done+=c.quests.filter(q=>q.done).length; });
+  return { total, done };
+}
+function calcLevel(done) {
+  if(done<3)return 1; if(done<7)return 2; if(done<12)return 3;
+  if(done<18)return 4; if(done<25)return 5; return 6;
+}
+function updateStatus() {
+  const { total, done } = countAll();
+  document.getElementById('cleared-count') && (document.getElementById('cleared-count').textContent = `${done} / ${total}`);
+  document.getElementById('exp-bar') && (document.getElementById('exp-bar').style.width = (total>0 ? (done/total)*100 : 0) + '%');
+  renderGrowthAxes();
+}
+function formatDate(iso) {
+  if(!iso) return '';
+  const d = new Date(iso);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function renderLog() {
+  const el = document.getElementById('log-entries');
+  if(!data.log.length){ el.innerHTML='<div style="text-align:center;color:var(--text-dim);font-size:11px;font-family:\'Share Tech Mono\',monospace;padding:12px;">まだ討伐記録がない。最初のクエストを完了せよ。</div>'; return; }
+  el.innerHTML = [...data.log].reverse().map(e => `
+    <div class="log-entry ${e.type==='stat'?'stat-log':e.type==='bear'?'bear-log':e.type==='title'?'title-log':''}">
+      <span class="log-time">${e.time}</span>
+      <span class="log-text">${e.type==='stat'?'📊':e.type==='bear'?'🐻':e.type==='title'?'✦':'⚔'} <span>${e.name}</span>　${e.reward}</span>
+    </div>`).join('');
+}
+function toggleChapter(id) {
+  const list=document.getElementById('list-'+id);
+  const toggle=document.getElementById('toggle-'+id);
+  const header=document.getElementById('header-'+id);
+  list.classList.toggle('open'); toggle.classList.toggle('open'); header.classList.toggle('active');
+}
+function toggleQuest(cid, qid) {
+  // v12: タップで詳細ポップアップを開く（直接トグルしない）
+  openQuestDetail(cid, qid);
+}
+
+// ── クエスト詳細ポップアップ ──
+let qdCurrentCid = null;
+let qdCurrentQid = null;
+function openQuestDetail(cid, qid) {
+  qdCurrentCid = cid;
+  qdCurrentQid = qid;
+  const chapter = data.chapters.find(c => c.id === cid);
+  const quest = chapter.quests.find(q => q.id === qid);
+  document.getElementById('qd-title').textContent = quest.name;
+  const statusEl = document.getElementById('qd-status');
+  statusEl.textContent = quest.done ? '✓ 討伐済み' : '◯ 未完了';
+  statusEl.className = `qd-status ${quest.done ? 'done' : 'active'}`;
+  document.getElementById('qd-desc').textContent = quest.desc || '（詳細メモなし）';
+  document.getElementById('qd-reward').textContent = `▶ 報酬：${quest.reward}`;
+  document.getElementById('qd-date').textContent = quest.doneAt ? `討伐日：${formatDate(quest.doneAt)}` : '';
+  document.getElementById('qd-date').style.display = quest.doneAt ? 'block' : 'none';
+  const btnsEl = document.getElementById('qd-btns');
+  if (quest.done) {
+    btnsEl.innerHTML = `
+      <button class="qd-btn qd-btn-close" onclick="closeQuestDetail()">閉じる</button>
+      <button class="qd-btn qd-btn-undo" onclick="confirmUndoQuest()">取消す</button>`;
+  } else {
+    btnsEl.innerHTML = `
+      <button class="qd-btn qd-btn-close" onclick="closeQuestDetail()">閉じる</button>
+      <button class="qd-btn qd-btn-toggle" onclick="confirmCompleteQuest()">⚔ 討伐完了</button>`;
+  }
+  document.getElementById('qd-overlay').classList.add('open');
+}
+function closeQuestDetail() {
+  document.getElementById('qd-overlay').classList.remove('open');
+  qdCurrentCid = null; qdCurrentQid = null;
+}
+document.getElementById('qd-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeQuestDetail();
+});
+
+// ── 討伐確認ダイアログ ──
+let confirmAction = null;
+function confirmCompleteQuest() {
+  closeQuestDetail();
+  const chapter = data.chapters.find(c => c.id === qdCurrentCid);
+  const quest = chapter.quests.find(q => q.id === qdCurrentQid);
+  document.getElementById('confirm-title').textContent = '討伐完了を報告する？';
+  document.getElementById('confirm-sub').textContent = 'この作戦は確かに完了した。嘘は許されない。';
+  document.getElementById('confirm-quest-name').textContent = quest.name;
+  document.querySelector('.confirm-btn-ok').textContent = '⚔ 討伐完了';
+  document.querySelector('.confirm-btn-ok').style.background = 'var(--green)';
+  confirmAction = 'complete';
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function confirmUndoQuest() {
+  closeQuestDetail();
+  const chapter = data.chapters.find(c => c.id === qdCurrentCid);
+  const quest = chapter.quests.find(q => q.id === qdCurrentQid);
+  document.getElementById('confirm-title').textContent = '討伐記録を取消す？';
+  document.getElementById('confirm-sub').textContent = '本当に取り消していいのか？記録は消える。';
+  document.getElementById('confirm-quest-name').textContent = quest.name;
+  document.querySelector('.confirm-btn-ok').textContent = '取消す';
+  document.querySelector('.confirm-btn-ok').style.background = 'var(--red)';
+  confirmAction = 'undo';
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  confirmAction = null;
+}
+function executeToggle() {
+  closeConfirm();
+  const chapter = data.chapters.find(c => c.id === qdCurrentCid);
+  const quest = chapter.quests.find(q => q.id === qdCurrentQid);
+  if (confirmAction === 'complete') {
+    quest.done = true;
+    quest.doneAt = new Date().toISOString();
+    data.log.push({ type: 'quest', time: formatDate(quest.doneAt), name: quest.name, reward: quest.reward });
+    saveData(); renderChapters(); updateStatus(); renderLog(); checkTitles();
+    setTimeout(() => showCelebration(quest.name, 'QUEST CLEARED！', quest.reward), 100);
+  } else if (confirmAction === 'undo') {
+    quest.done = false;
+    quest.doneAt = null;
+    data.log = data.log.filter(l => !(l.type === 'quest' && l.name === quest.name));
+    saveData(); renderChapters(); updateStatus(); renderLog(); checkTitles();
+  }
+  confirmAction = null;
+}
+document.getElementById('confirm-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+function renderChapters() {
+  const container = document.getElementById('chapters-container');
+  const openStates = {};
+  data.chapters.forEach(c => { const list=document.getElementById('list-'+c.id); openStates[c.id]=list?list.classList.contains('open'):(c.id==='c0'||c.id==='c1'); });
+  container.innerHTML = data.chapters.map(chapter => {
+    const total=chapter.quests.length, done=chapter.quests.filter(q=>q.done).length;
+    const isOpen=openStates[chapter.id]!==undefined?openStates[chapter.id]:false;
+    return `<div class="chapter">
+      <div class="chapter-header ${isOpen?'active':''}" id="header-${chapter.id}" onclick="toggleChapter('${chapter.id}')">
+        <div class="chapter-title">${chapter.title}</div>
+        <div class="chapter-progress">${done}/${total}</div>
+        <div class="chapter-toggle ${isOpen?'open':''}" id="toggle-${chapter.id}">▼</div>
+      </div>
+      <div class="quest-list ${isOpen?'open':''}" id="list-${chapter.id}">
+        ${chapter.quests.map(quest=>{
+          const shortDesc = quest.desc ? (quest.desc.length > 40 ? quest.desc.substring(0, 40) + '…' : quest.desc) : '';
+          return `
+          <div class="quest-item ${quest.done?'done':''}" onclick="toggleQuest('${chapter.id}','${quest.id}')">
+            <div class="quest-checkbox">${quest.done?'✓':''}</div>
+            <div class="quest-content">
+              <div class="quest-name">${quest.name}</div>
+              ${shortDesc?`<div class="quest-desc">${shortDesc}</div>`:''}
+              <div class="quest-reward">▶ 報酬：${quest.reward}</div>
+              ${quest.doneAt?`<div class="quest-date">討伐：${formatDate(quest.doneAt)}</div>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+        <button class="add-quest-btn" onclick="openModal('${chapter.id}');event.stopPropagation();">＋ クエストを追加する</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+let targetChapterId = null;
+function openModal(cid) {
+  targetChapterId = cid;
+  document.getElementById('quest-chapter').innerHTML = data.chapters.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${c.title}</option>`).join('');
+  ['quest-name','quest-desc','quest-reward'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+function addQuest(){
+  const cid=document.getElementById('quest-chapter').value;
+  const name=document.getElementById('quest-name').value.trim();
+  if(!name){ alert('クエスト名を入力してください'); return; }
+  data.chapters.find(c=>c.id===cid).quests.push({id:'q_custom_'+Date.now(),name,desc:document.getElementById('quest-desc').value.trim(),reward:document.getElementById('quest-reward').value.trim()||'EXP+10',done:false,doneAt:null});
+  saveData(); closeModal(); renderChapters(); updateStatus();
+}
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('stat-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeStatModal();});
+document.getElementById('stat-new-value').addEventListener('keydown',function(e){if(e.key==='Enter')updateStat();});
+
+// ── 初コメ製造マシーン ──
+const FCM_STORAGE = 'fcm_ryu_v1';
+let fcmPlatform = 'x';
+let fcmCat = null;
+let fcmCurrent = '';
+let fcmSt = { gen:0, copy:0, tweet:0 };
+
+const fcmCats = [
+  { id:'zos',     label:'🤣 ゾス自虐' },
+  { id:'lonely',  label:'🏜 孤独な最前線' },
+  { id:'surreal', label:'🌀 シュール哲学' },
+  { id:'junior',  label:'🗡 若手へ' },
+  { id:'senior',  label:'🛡 中堅・ベテランへ' },
+  { id:'gold',    label:'💰 GOLD哲学' },
+  { id:'bear',    label:'🐻 クマ哲学' },
+  { id:'sharp',   label:'🔥 鋭い一言' },
+];
+
+const fcmPool = {
+  x: {
+    zos: [
+      "お前の初めてのいいね、俺がもらった。\n\nどういたしまして。\n\n── ソルジャー医.Ryu（孤独な最前線より）",
+      "ゾス。\n自分の投稿に自分でコメントする男がいる。\n\n俺だ。\n\n── ソルジャー医.Ryu",
+      "自分の投稿を誰よりも早く読んでいる。\n\n読者No.1は俺だ。\n\n── ソルジャー医.Ryu",
+      "いいねゼロ。コメントゼロ。リポストゼロ。\n\nゾス。壮観だな。\n\n── ソルジャー医.Ryu（孤高の戦場より）",
+      "患者さんに「先生、SNS向いてないんじゃないですか」\nと言われた気がした。\n\nまだ始めてもいないのに。\n\n── ソルジャー医.Ryu",
+      "ウンコ汁を顔に食らっても続けた男が、\nフォロワーゼロで凹むはずがない。\n\nゾス。\n\n── ソルジャー医.Ryu",
+      "自分の投稿に自分でいいねしそうになった。\nやめた。\nコメントにした。\n\nまだ理性が残っている。\n\n── ソルジャー医.Ryu",
+    ],
+    lonely: [
+      "無音の戦場で俺は戦っている。\n\nこの記録がいつか伝説になる。\nなるはずだ。\nたぶん。\n\n── ソルジャー医.Ryu（フォロワーゼロ時代）",
+      "孤独な最前線に立っている。\n\n後ろを振り返っても誰もいない。\n前を向いても誰もいない。\n\nゾス。俺だけいる。\n\n── ソルジャー医.Ryu",
+      "誰も読んでいないかもしれない。\n\nそれでも書く。\nそれが解放戦記の第0話だ。\n\n── ソルジャー医.Ryu",
+      "最初の読者は俺だった。\n最初のいいねも俺だった。\n最初のコメントも俺だった。\n\nこれはもはやひとり演劇だ。\n\n── ソルジャー医.Ryu",
+    ],
+    surreal: [
+      "「先生、大丈夫ですか」\n\n患者さんに言われた言葉を思い出した。\n俺は自分の投稿にコメントしている。\n\n診察されているのは俺の方かもしれない。\n\n── ソルジャー医.Ryu",
+      "フォロワーゼロのアカウントを運営する医師がいる。\n\n患者を看取り、\nドクターヘリで飛び、\n自分の投稿に自分でコメントしている。\n\n── ソルジャー医.Ryu",
+      "救急15年やってきた俺が、\n今一番緊張しているのは\nXの投稿ボタンを押す瞬間だ。\n\n医療崩壊より怖い気がする。\n\n── ソルジャー医.Ryu",
+      "ICUで患者の命と向き合い、\nドクターカーで疾走し、\n帰宅後は自分のnoteに自分でコメントしている。\n\nこれが41歳のリアルだ。\n\n── ソルジャー医.Ryu",
+      "訪問診療で患者さんの手を握り、\n夜は自分の投稿に「いいね」できるか迷い、\nやめてコメントにした男がいる。\n\n俺だ。ゾス。\n\n── ソルジャー医.Ryu",
+      "鉄マスクをかぶり、クマのワッペンをつけ、\n自分のXにコメントしている。\n\nこれがマンダロリアンの流儀かは知らない。\n\n── ソルジャー医.Ryu",
+    ],
+    junior: [
+      "研修医よ。\nお前が見てくれていると信じて書いている。\n\nいつかここに来い。\n待ってる。\n\n── ソルジャー医.Ryu",
+      "4月に飛び込むお前へ。\nこの投稿は、お前のために書いた。\n\nまだ誰も読んでいないが。\n\n── ソルジャー医.Ryu",
+      "研修医1年目の俺が読んでほしかった投稿を書いている。\n\n当時の俺に届けたい。\nタイムマシンがないので、お前に届ける。\n\n── ソルジャー医.Ryu",
+    ],
+    senior: [
+      "中堅医師よ。\n今、HP何%だ？\n\n誰も聞かないから俺が聞く。\n\n── ソルジャー医.Ryu",
+      "ベテランの先輩方へ。\nこれまでの戦いへの敬意を忘れない。\n\n俺はその背中を見て育った。\n見られていたかは知らないが。\n\n── ソルジャー医.Ryu",
+      "10年以上戦ってきたお前に言いたい。\n\n消耗しきる前に守りを固めろ。\nそのためにこの投稿を書いた。\n\nまだ誰も読んでいないが。\n\n── ソルジャー医.Ryu",
+    ],
+    gold: [
+      "金をもらうから、命をかけて戦える。\n\n対価は、プロの証だ。\n\n── ソルジャー医.Ryu",
+      "感謝の言葉は、消える。\nお金は、残る。\n\n残るものが、次の戦いの武器になる。\n\n── ソルジャー医.Ryu",
+      "仕事はお金のためにする。\nその代わり、もらった分以上の価値を必ず出す。\n\nこれがプロの掟だ。\n\n── ソルジャー医.Ryu",
+    ],
+    bear: [
+      "どんなに強くなっても。\nどんなに稼いでも。\n\n弱き者への優しさだけは、忘れない。\n\n── ソルジャー医.Ryu",
+      "鉄マスクの奥に、クマのワッペンがある。\n\nこれが俺の本質だ。\nシュールだが、本質だ。\n\n── ソルジャー医.Ryu",
+      "患者に向けるのは剣ではなく、盾だ。\n\nそれだけは変わらない。\nフォロワーがゼロでも変わらない。\n\n── ソルジャー医.Ryu",
+    ],
+    sharp: [
+      "残業は悪だ。\n\n── ソルジャー医.Ryu",
+      "感謝の言葉は消える。お金は残る。\n\n── ソルジャー医.Ryu",
+      "定時で帰るのは怠慢じゃない。設計力の証だ。\n\n── ソルジャー医.Ryu",
+      "やりがい搾取は、略奪だ。\n\n── ソルジャー医.Ryu",
+      "消耗しきってから気づいても遅い。\n\n── ソルジャー医.Ryu",
+    ],
+  },
+  note: {
+    zos: [
+      "誰も読んでいないかもしれない。\n\nそれでも俺が最初の読者だ。\nゾス。\n\n── ソルジャー医.Ryu（孤独な執筆者）",
+      "自分の記事に自分でコメントする医師がいる。\n\n俺だ。\nこれが解放戦記の始まりの記録だ。\n\n── ソルジャー医.Ryu",
+      "フォロワーゼロのnoteに書き続ける男がいる。\n\n俺だ。ゾス。\n\nこの記録がいつか誰かの地図になる。\nなるはずだ。たぶん。\n\n── ソルジャー医.Ryu",
+    ],
+    lonely: [
+      "この記事を書き終えた。\n\n誰も読まなくても、書いたことは事実だ。\n記録は残る。\n\n── ソルジャー医.Ryu",
+      "無音のnoteで俺は書き続ける。\n\nゲームオーバーは、まだ来ない。\nたぶん。\n\n── ソルジャー医.Ryu",
+    ],
+    surreal: [
+      "救急15年やってきた男が、\n自分のnoteに自分でコメントしている。\n\n人生は不思議だ。\n\n── ソルジャー医.Ryu",
+      "ICUで患者の命と向き合ってきた俺が、\n今一番緊張しているのは\nこの記事を公開するボタンを押す瞬間だ。\n\n── ソルジャー医.Ryu",
+      "訪問診療で患者さんの話を聞き、\n夜は誰も読まないnoteを書いている。\n\nこれが41歳のリアルだ。ゾス。\n\n── ソルジャー医.Ryu",
+    ],
+    junior: [
+      "4月に研修医になるお前へ書いた記事だ。\n\nいつかここに来い。待ってる。\nまだ誰も来ていないが。\n\n── ソルジャー医.Ryu",
+      "研修医1年目の俺が読みたかった内容を書いた。\n\n届け、駆け出しソルジャーよ。\n\n── ソルジャー医.Ryu",
+    ],
+    senior: [
+      "中堅・ベテランの先生方へ。\n\nこの記事が守りの設計の最初の一歩になれば。\nまだ誰も読んでいないが。\n\n── ソルジャー医.Ryu",
+    ],
+    gold: [
+      "お金の話を医師が書く。\n批判があることは知っている。\n\n稼ぐことが戦い続けることだ。\nプロの掟として書いた。\n\n── ソルジャー医.Ryu",
+    ],
+    bear: [
+      "どんなに強くなっても、弱き者への優しさだけは忘れない。\n\nそれがこのnoteの根底に流れる核だ。\nフォロワーがゼロでも変わらない。\n\n── ソルジャー医.Ryu",
+    ],
+    sharp: [
+      "残業は悪だ。この記事に全部書いた。\n\n── ソルジャー医.Ryu",
+      "消耗しきる前に読め。\n\n── ソルジャー医.Ryu",
+    ],
+  }
+};
+
+function fcmLoadStats() {
+  try { const s = JSON.parse(localStorage.getItem(FCM_STORAGE)||'{}'); fcmSt = s.stats || {gen:0,copy:0,tweet:0}; } catch(e) {}
+}
+function fcmSaveStats() {
+  localStorage.setItem(FCM_STORAGE, JSON.stringify({stats: fcmSt}));
+}
+function fcmUpdateUI() {
+  document.getElementById('fcm-gen').textContent = fcmSt.gen;
+  document.getElementById('fcm-copy').textContent = fcmSt.copy;
+  document.getElementById('fcm-tweet-cnt').textContent = fcmSt.tweet;
+}
+function toggleFCM() {
+  const body = document.getElementById('fcm-body');
+  const toggle = document.getElementById('fcm-toggle');
+  body.classList.toggle('open'); toggle.classList.toggle('open');
+}
+function fcmRenderCats() {
+  document.getElementById('fcm-cat-grid').innerHTML = fcmCats.map(c =>
+    `<button class="fcm-cat-btn ${fcmCat===c.id?'selected':''}" onclick="fcmSelectCat('${c.id}')">${c.label}</button>`
+  ).join('');
+}
+function fcmSelectCat(id) { fcmCat = id; fcmRenderCats(); }
+function fcmSetPlatform(p) {
+  fcmPlatform = p;
+  document.getElementById('fcm-pt-x').classList.toggle('active', p==='x');
+  document.getElementById('fcm-pt-note').classList.toggle('active', p==='note');
+}
+function fcmGenerate() {
+  const cat = fcmCat || 'surreal';
+  const pool = (fcmPool[fcmPlatform] && fcmPool[fcmPlatform][cat]) ? fcmPool[fcmPlatform][cat] : fcmPool['x']['surreal'];
+  fcmCurrent = pool[Math.floor(Math.random() * pool.length)];
+  const box = document.getElementById('fcm-result-box');
+  box.classList.add('has-content');
+  box.innerHTML = `<div class="fcm-result-text">${fcmCurrent.replace(/\n/g,'<br>')}</div>`;
+  document.getElementById('fcm-action-row').style.display = 'flex';
+  fcmSt.gen++; fcmSaveStats(); fcmUpdateUI();
+  data.log.push({type:'bear', time:formatDate(new Date().toISOString()), name:'初コメ製造', reward:'シュールな記録をまた一つ刻んだ。ゾス。'});
+  saveData(); renderLog();
+}
+function fcmTweet() {
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(fcmCurrent)}`, '_blank');
+  fcmSt.tweet++; fcmSaveStats(); fcmUpdateUI();
+}
+function fcmCopyIt() {
+  navigator.clipboard.writeText(fcmCurrent).then(() => {
+    const t = document.getElementById('toast');
+    t.textContent = 'コピーした。今すぐ貼り付けろ。ゾス。';
+    t.classList.add('show');
+    setTimeout(() => { t.classList.remove('show'); t.textContent = 'クリップボードにコピーした。Xに貼り付けろ。'; }, 2200);
+    fcmSt.copy++; fcmSaveStats(); fcmUpdateUI();
+  });
+}
+
+// ── 三軸成長システム ──
+const growthAxes = [
+  {
+    id: 'ax_gold',
+    cls: 'ax-gold',
+    barCls: 'gold',
+    rankCls: 'gold',
+    icon: '⛓',
+    label: '解放ランク ── 副業月収が鎖を断ち切る',
+    getValue: () => data.stats.monthly_income.value,
+    unit: '万円/月',
+    tiers: [
+      { min: 0,    max: 0.5,  rank: '⛓ 完全奴隷ソルジャー',   skills: [] },
+      { min: 0.5,  max: 1,    rank: '⛓ 奴隷（微かな光）',     skills: ['初収益'] },
+      { min: 1,    max: 3,    rank: '奴隷見習い（覚醒）',      skills: ['初収益', '副業開始'] },
+      { min: 3,    max: 8,    rank: '半奴隷ソルジャー',        skills: ['初収益', '副業開始', 'テンプレ販売'] },
+      { min: 8,    max: 12,   rank: '鎖が緩み始めた',          skills: ['初収益', '副業開始', 'テンプレ販売', 'メンバーシップ'] },
+      { min: 12,   max: 20,   rank: 'フリーソルジャー見習い候補', skills: ['初収益', '副業開始', 'テンプレ販売', 'メンバーシップ', '監修案件'] },
+      { min: 20,   max: 33,   rank: '解放の射程内',            skills: ['初収益', '副業開始', 'テンプレ販売', 'メンバーシップ', '監修案件', '収益複数柱'] },
+      { min: 33,   max: 83,   rank: '🗝 フリーソルジャー見習い（第1解放）', skills: ['初収益', '副業開始', 'テンプレ販売', 'メンバーシップ', '監修案件', '収益複数柱', '週4常勤'] },
+      { min: 83,   max: 833,  rank: '🦅 フリーソルジャー医（第2解放）', skills: ['初収益', '副業開始', 'テンプレ販売', 'メンバーシップ', '監修案件', '収益複数柱', '週4常勤', '常勤最小化'] },
+      { min: 833,  max: Infinity, rank: '🕊 真のフリーソルジャー医（完全解放）', skills: ['全解放済み'] },
+    ],
+  },
+  {
+    id: 'ax_battle',
+    cls: 'ax-red',
+    barCls: 'red',
+    rankCls: 'red',
+    icon: '⚔',
+    label: '行動力ランク ── クエスト完了が戦闘力を育てる',
+    getValue: () => countDone(data),
+    unit: 'クエスト',
+    tiers: [
+      { min: 0,  max: 1,   rank: '待機中の新兵',         skills: [] },
+      { min: 1,  max: 3,   rank: '新兵ソルジャー',       skills: ['初動'] },
+      { min: 3,  max: 7,   rank: '一歩踏み出した男',     skills: ['初動', '初動突破'] },
+      { min: 7,  max: 12,  rank: '古参ソルジャー',       skills: ['初動', '初動突破', '継続証明'] },
+      { min: 12, max: 18,  rank: '歴戦の傭兵医',         skills: ['初動', '初動突破', '継続証明', '実績蓄積'] },
+      { min: 18, max: 25,  rank: 'ベテランソルジャー',   skills: ['初動', '初動突破', '継続証明', '実績蓄積', '習慣確立'] },
+      { min: 25, max: 35,  rank: '百戦錬磨',             skills: ['初動', '初動突破', '継続証明', '実績蓄積', '習慣確立', '再現性獲得'] },
+      { min: 35, max: 50,  rank: '戦場の設計者',         skills: ['初動', '初動突破', '継続証明', '実績蓄積', '習慣確立', '再現性獲得', '仕組み化'] },
+      { min: 50, max: 75,  rank: '不屈の戦士',           skills: ['初動', '初動突破', '継続証明', '実績蓄積', '習慣確立', '再現性獲得', '仕組み化', '自動化'] },
+      { min: 75, max: Infinity, rank: '🔥 伝説のソルジャー医', skills: ['全スキル解放'] },
+    ],
+  },
+  {
+    id: 'ax_influence',
+    cls: 'ax-blue',
+    barCls: 'blue',
+    rankCls: 'blue',
+    icon: '📡',
+    label: '影響力ランク ── フォロワーが世界への到達距離になる',
+    getValue: () => data.stats.x_followers.value,
+    unit: '人',
+    tiers: [
+      { min: 0,     max: 10,    rank: '声なき戦士',         skills: [] },
+      { min: 10,    max: 50,    rank: '最初の反応',         skills: ['初フォロワー'] },
+      { min: 50,    max: 100,   rank: '無名の戦士',         skills: ['初フォロワー', '50人突破'] },
+      { min: 100,   max: 300,   rank: '声が届き始めた',     skills: ['初フォロワー', '50人突破', '100人突破'] },
+      { min: 300,   max: 700,   rank: '注目のソルジャー医', skills: ['初フォロワー', '50人突破', '100人突破', '300人突破'] },
+      { min: 700,   max: 1000,  rank: '拡散の波に乗った',   skills: ['初フォロワー', '50人突破', '100人突破', '300人突破', '700人突破'] },
+      { min: 1000,  max: 3000,  rank: '千の戦士を率いる者', skills: ['初フォロワー', '50人突破', '100人突破', '300人突破', '700人突破', '1000人突破'] },
+      { min: 3000,  max: 5000,  rank: '影響力ソルジャー医', skills: ['初フォロワー', '50人突破', '100人突破', '300人突破', '700人突破', '1000人突破', '3000人突破'] },
+      { min: 5000,  max: 10000, rank: '戦場の伝道師',       skills: ['初フォロワー', '50人突破', '100人突破', '300人突破', '700人突破', '1000人突破', '3000人突破', '5000人突破'] },
+      { min: 10000, max: Infinity, rank: '⭐ 伝説の声', skills: ['全到達済み'] },
+    ],
+  },
+];
+
+function getAxisTier(ax) {
+  const v = ax.getValue();
+  for (let i = ax.tiers.length - 1; i >= 0; i--) {
+    if (v >= ax.tiers[i].min) return { tier: ax.tiers[i], idx: i, value: v };
+  }
+  return { tier: ax.tiers[0], idx: 0, value: v };
+}
+
+function renderGrowthAxes() {
+  const el = document.getElementById('growth-axes');
+  if (!el) return;
+  el.innerHTML = growthAxes.map(ax => {
+    const { tier, idx, value } = getAxisTier(ax);
+    const nextTier = ax.tiers[idx + 1] || null;
+    const pct = nextTier
+      ? Math.min(((value - tier.min) / (nextTier.min - tier.min)) * 100, 100)
+      : 100;
+    const skillsHTML = tier.skills.length
+      ? tier.skills.map(s => `<span class="ax-skill unlocked">✓ ${s}</span>`).join('')
+      + (nextTier ? nextTier.skills.filter(s => !tier.skills.includes(s)).map(s => `<span class="ax-skill locked">◯ ${s}</span>`).join('') : '')
+      : (nextTier ? nextTier.skills.map(s => `<span class="ax-skill locked">◯ ${s}</span>`).join('') : '');
+    return `<div class="growth-axis ${ax.cls}">
+      <div class="ax-top">
+        <span class="ax-icon">${ax.icon}</span>
+        <span class="ax-label">${ax.label}</span>
+        <span class="ax-rank ${ax.rankCls}">${tier.rank}</span>
+      </div>
+      <div class="ax-bar-bg"><div class="ax-bar-fill ${ax.barCls}" style="width:${pct}%"></div></div>
+      <div class="ax-meta">
+        <span class="ax-meta-cur">現在: ${value.toLocaleString()}${ax.unit}</span>
+        <span class="ax-meta-next">${nextTier ? `NEXT: <span>${nextTier.min.toLocaleString()}${ax.unit}</span>` : '── MAX RANK ──'}</span>
+      </div>
+      ${skillsHTML ? `<div class="ax-skills">${skillsHTML}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── 勉強ログ ──
+const studyCats = [
+  { id: 'ai',      label: '🤖 AI活用',    color: '#3498db' },
+  { id: 'money',   label: '💰 お金・税金', color: '#c9a84c' },
+  { id: 'medical', label: '🏥 医療',       color: '#27ae60' },
+  { id: 'writing', label: '✍ 執筆・発信',  color: '#e67e22' },
+  { id: 'career',  label: '🗡 キャリア',   color: '#9b59b6' },
+  { id: 'book',    label: '📕 読書',       color: '#e74c3c' },
+  { id: 'other',   label: '📦 その他',     color: '#95a5a6' },
+];
+let studySelectedCat = null;
+let studyFilter = 'all';
+
+function toggleStudy() {
+  const body = document.getElementById('study-body');
+  const toggle = document.getElementById('sh-toggle');
+  body.classList.toggle('open'); toggle.classList.toggle('open');
+}
+function renderStudyCatBtns() {
+  document.getElementById('study-cat-btns').innerHTML = studyCats.map(c =>
+    `<button class="study-cat-btn ${studySelectedCat === c.id ? 'selected' : ''}" onclick="selectStudyCat('${c.id}')">${c.label}</button>`
+  ).join('');
+}
+function selectStudyCat(id) {
+  studySelectedCat = id;
+  renderStudyCatBtns();
+}
+function saveStudyEntry() {
+  const text = document.getElementById('study-input').value.trim();
+  if (!text) { alert('何を学んだか書いてくれ。'); return; }
+  const cat = studySelectedCat || 'other';
+  const dur = parseInt(document.getElementById('study-dur').value) || 0;
+  if (!data.studyLog) data.studyLog = [];
+  data.studyLog.unshift({
+    id: Date.now(),
+    date: formatDate(new Date().toISOString()),
+    cat,
+    duration: dur,
+    text
+  });
+  document.getElementById('study-input').value = '';
+  document.getElementById('study-dur').value = '';
+  data.log.push({ type: 'stat', time: formatDate(new Date().toISOString()), name: '勉強ログ', reward: `${studyCats.find(c => c.id === cat)?.label || cat} ${dur > 0 ? dur + '分' : ''} ${text.substring(0, 30)}` });
+  saveData(); renderStudyEntries(); renderStudySummary(); renderLog();
+  const t = document.getElementById('toast');
+  t.textContent = '経験値に変換した。ゾス。'; t.classList.add('show');
+  setTimeout(() => { t.classList.remove('show'); t.textContent = 'クリップボードにコピーした。Xに貼り付けろ。'; }, 2000);
+}
+function deleteStudyEntry(id) {
+  if (!data.studyLog) return;
+  data.studyLog = data.studyLog.filter(e => e.id !== id);
+  saveData(); renderStudyEntries(); renderStudySummary();
+}
+function setStudyFilter(f) {
+  studyFilter = f;
+  document.querySelectorAll('.study-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderStudyEntries();
+}
+function renderStudyFilters() {
+  document.getElementById('study-filters').innerHTML =
+    `<button class="study-filter-btn ${studyFilter === 'all' ? 'active' : ''}" data-filter="all" onclick="setStudyFilter('all')">ALL</button>` +
+    studyCats.map(c => `<button class="study-filter-btn ${studyFilter === c.id ? 'active' : ''}" data-filter="${c.id}" onclick="setStudyFilter('${c.id}')">${c.label}</button>`).join('');
+}
+function renderStudyEntries() {
+  const logs = (data.studyLog || []).filter(e => studyFilter === 'all' || e.cat === studyFilter);
+  const el = document.getElementById('study-entries');
+  if (!logs.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:11px;font-family:\'Share Tech Mono\',monospace;padding:16px;">まだ記録がない。最初の学びを刻め。</div>';
+    return;
+  }
+  el.innerHTML = logs.slice(0, 50).map(e => {
+    const cat = studyCats.find(c => c.id === e.cat);
+    return `<div class="study-entry">
+      <div class="se-top">
+        <span class="se-date">${e.date}</span>
+        <span class="se-cat">${cat ? cat.label : e.cat}</span>
+        ${e.duration > 0 ? `<span class="se-dur">⏱ ${e.duration}分</span>` : ''}
+      </div>
+      <div class="se-text">${e.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+      <button class="se-delete" onclick="deleteStudyEntry(${e.id});event.stopPropagation()">✕</button>
+    </div>`;
+  }).join('');
+}
+function renderStudySummary() {
+  const logs = data.studyLog || [];
+  const totalEntries = logs.length;
+  const totalMinutes = logs.reduce((s, e) => s + (e.duration || 0), 0);
+  const today = new Date().toISOString().slice(0, 10);
+  const todayEntries = logs.filter(e => e.date && e.date.startsWith(today.replace(/-/g, '.'))).length;
+  const catCounts = {};
+  logs.forEach(e => { catCounts[e.cat] = (catCounts[e.cat] || 0) + 1; });
+  const topCat = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById('study-summary').innerHTML = `
+    <div class="study-summary-card"><div class="study-summary-val">${totalEntries}</div><div class="study-summary-lab">総記録数</div></div>
+    <div class="study-summary-card"><div class="study-summary-val">${totalMinutes > 60 ? Math.round(totalMinutes / 60) + 'h' : totalMinutes + 'm'}</div><div class="study-summary-lab">総学習時間</div></div>
+    <div class="study-summary-card"><div class="study-summary-val">${todayEntries}</div><div class="study-summary-lab">今日の学び</div></div>
+    <div class="study-summary-card"><div class="study-summary-val">${topCat ? (studyCats.find(c => c.id === topCat[0])?.label.split(' ')[1] || topCat[0]) : '──'}</div><div class="study-summary-lab">最多カテゴリ</div></div>`;
+}
+
+
+// ── 日報パネル ──
+const moraleLevels = [
+  { id: 1, icon: '💀', label: '壊滅', color: '#e74c3c' },
+  { id: 2, icon: '😰', label: '低下', color: '#e67e22' },
+  { id: 3, icon: '😐', label: '普通', color: '#f1c40f' },
+  { id: 4, icon: '😊', label: '好調', color: '#2ecc71' },
+  { id: 5, icon: '🔥', label: '最高', color: '#c9a84c' },
+];
+const campQuality = [
+  { id: 1, label: '☆', desc: '劣悪' },
+  { id: 2, label: '☆☆', desc: '不足' },
+  { id: 3, label: '☆☆☆', desc: '普通' },
+  { id: 4, label: '☆☆☆☆', desc: '良好' },
+  { id: 5, label: '☆☆☆☆☆', desc: '完璧' },
+];
+const mealTypes = [
+  { id: 'self', label: '🍳自炊' },
+  { id: 'bento', label: '🍱弁当' },
+  { id: 'conbini', label: '🏪携行食' },
+  { id: 'restaurant', label: '🍽酒場メシ' },
+  { id: 'skip', label: '⛔なし' },
+];
+const weatherTypes = [
+  { id: 'sunny', label: '☀晴' },
+  { id: 'cloudy', label: '☁曇' },
+  { id: 'rainy', label: '🌧雨' },
+  { id: 'snowy', label: '❄雪' },
+  { id: 'storm', label: '⛈嵐' },
+  { id: 'hot', label: '🔥灼熱' },
+  { id: 'cold', label: '🥶極寒' },
+];
+
+let dailyMorale = 3;
+let dailyCampQ = 3;
+let dailyMeals = { morning: 'skip', noon: 'conbini', night: 'self' };
+let dailyWeather = 'sunny';
+
+function toggleDaily() {
+  const b = document.getElementById('daily-body');
+  b.classList.toggle('open');
+  document.getElementById('daily-toggle').textContent = b.classList.contains('open') ? '▲' : '▼';
+}
+function initDailyBtns() {
+  // Morale
+  document.getElementById('morale-btns').innerHTML = moraleLevels.map(m =>
+    `<button class="daily-btn${dailyMorale===m.id?' active':''}" onclick="setMorale(${m.id})">${m.icon} ${m.label}</button>`
+  ).join('');
+  updateMoraleBar();
+  // Camp quality
+  document.getElementById('camp-quality-btns').innerHTML = campQuality.map(c =>
+    `<button class="daily-btn${dailyCampQ===c.id?' active':''}" onclick="setCampQ(${c.id})" style="font-size:10px;">${c.label}</button>`
+  ).join('');
+  // Meals
+  ['morning','noon','night'].forEach(slot => {
+    document.getElementById(`meal-${slot}-btns`).innerHTML = mealTypes.map(m =>
+      `<button class="daily-btn${dailyMeals[slot]===m.id?' active':''}" onclick="setMeal('${slot}','${m.id}')" style="font-size:10px;padding:4px 6px;">${m.label}</button>`
+    ).join('');
+  });
+  // Weather
+  document.getElementById('weather-btns').innerHTML = weatherTypes.map(w =>
+    `<button class="daily-btn${dailyWeather===w.id?' active':''}" onclick="setWeather('${w.id}')">${w.label}</button>`
+  ).join('');
+}
+function setMorale(lv) { dailyMorale = lv; initDailyBtns(); }
+function setCampQ(q) { dailyCampQ = q; initDailyBtns(); }
+function setMeal(slot, type) { dailyMeals[slot] = type; initDailyBtns(); }
+function setWeather(w) { dailyWeather = w; initDailyBtns(); }
+function updateMoraleBar() {
+  const d = document.getElementById('morale-display');
+  d.style.display = 'flex';
+  const pct = (dailyMorale / 5) * 100;
+  const ml = moraleLevels.find(m => m.id === dailyMorale);
+  document.getElementById('morale-fill').style.width = pct + '%';
+  document.getElementById('morale-fill').style.background = ml.color;
+  document.getElementById('morale-val').textContent = ml.icon + ' ' + ml.label;
+}
+function saveDailyReport() {
+  const bed = document.getElementById('camp-bed').value;
+  const wake = document.getElementById('camp-wake').value;
+  let sleepH = 0;
+  if (bed && wake) {
+    const [bh,bm] = bed.split(':').map(Number);
+    const [wh,wm] = wake.split(':').map(Number);
+    let mins = (wh*60+wm) - (bh*60+bm);
+    if (mins < 0) mins += 1440;
+    sleepH = Math.round(mins/60*10)/10;
+  }
+  const mealQ = Object.values(dailyMeals).filter(m => m !== 'skip').length;
+  const selfMeals = Object.values(dailyMeals).filter(m => m === 'self').length;
+  let rationGrade = '劣悪';
+  if (mealQ >= 3 && selfMeals >= 1) rationGrade = '精鋭';
+  else if (mealQ >= 2) rationGrade = '標準';
+  else if (mealQ >= 1) rationGrade = '最低限';
+
+  const entry = {
+    id: Date.now(),
+    date: new Date().toISOString().slice(0,10).replace(/-/g,'.'),
+    morale: dailyMorale,
+    campQ: dailyCampQ,
+    sleepH: sleepH,
+    bed: bed,
+    wake: wake,
+    meals: {...dailyMeals},
+    rationGrade: rationGrade,
+    weather: dailyWeather,
+  };
+  data.dailyReports.unshift(entry);
+  saveData();
+  renderDailyEntries();
+}
+function renderDailyEntries() {
+  const el = document.getElementById('daily-entries');
+  if (!data.dailyReports || !data.dailyReports.length) { el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:10px;">日報はまだない。最初の記録を残せ。</div>'; return; }
+  el.innerHTML = data.dailyReports.slice(0,20).map(e => {
+    const ml = moraleLevels.find(m => m.id === e.morale) || moraleLevels[2];
+    const wt = weatherTypes.find(w => w.id === e.weather) || weatherTypes[0];
+    return `<div class="daily-entry">
+      <div class="daily-entry-date">${e.date}</div>
+      <div class="daily-entry-row">
+        <span class="daily-entry-item">${ml.icon}士気:${ml.label}</span>
+        <span class="daily-entry-item">🏕${e.sleepH}h/${'☆'.repeat(e.campQ)}</span>
+        <span class="daily-entry-item">🍖${e.rationGrade}</span>
+        <span class="daily-entry-item">${wt.label}</span>
+      </div>
+      <button class="daily-entry-del" onclick="deleteDailyEntry(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+function deleteDailyEntry(id) {
+  data.dailyReports = data.dailyReports.filter(e => e.id !== id);
+  saveData(); renderDailyEntries();
+}
+
+// ── 補給ログ（支出） ──
+const supplyCats = [
+  { id: 'scroll', label: '📜巻物', desc: '書籍' },
+  { id: 'training', label: '🏋訓練所', desc: 'セミナー・研修' },
+  { id: 'tavern', label: '🍺酒場', desc: '飲み会・交際費' },
+  { id: 'equip', label: '⚔装備', desc: 'ガジェット・道具' },
+  { id: 'castle', label: '🏰城維持費', desc: '住宅ローン・家賃' },
+  { id: 'fort', label: '🛡砦防衛', desc: '親・家族' },
+  { id: 'potion', label: '🧪回復薬', desc: '医療・健康' },
+  { id: 'ration', label: '🍖兵糧', desc: '食費' },
+  { id: 'transport', label: '🐴馬代', desc: '交通費' },
+  { id: 'dark', label: '💀闇商人', desc: '無駄遣い' },
+  { id: 'other', label: '📦その他', desc: 'その他' },
+];
+let selectedSupplyCat = 'ration';
+
+function toggleSupply() {
+  const b = document.getElementById('supply-body');
+  b.classList.toggle('open');
+  document.getElementById('supply-toggle').textContent = b.classList.contains('open') ? '▲' : '▼';
+}
+function initSupplyCats() {
+  document.getElementById('supply-cat-btns').innerHTML = supplyCats.map(c =>
+    `<button class="supply-cat-btn${selectedSupplyCat===c.id?' active':''}" onclick="selectSupplyCat('${c.id}')">${c.label}</button>`
+  ).join('');
+}
+function selectSupplyCat(id) { selectedSupplyCat = id; initSupplyCats(); }
+function saveSupplyEntry() {
+  const amt = parseInt(document.getElementById('supply-amount').value);
+  const desc = document.getElementById('supply-desc').value.trim();
+  if (!amt || amt <= 0) return;
+  const entry = {
+    id: Date.now(), date: new Date().toISOString().slice(0,10).replace(/-/g,'.'),
+    amount: amt, cat: selectedSupplyCat, desc: desc
+  };
+  data.supplyLog.unshift(entry);
+  saveData();
+  document.getElementById('supply-amount').value = '';
+  document.getElementById('supply-desc').value = '';
+  renderSupplyEntries(); renderSupplySummary();
+}
+function renderSupplyEntries() {
+  const el = document.getElementById('supply-entries');
+  if (!data.supplyLog.length) { el.innerHTML = ''; return; }
+  el.innerHTML = data.supplyLog.slice(0,30).map(e => {
+    const cat = supplyCats.find(c => c.id === e.cat);
+    return `<div class="supply-entry">
+      <div class="supply-entry-left">
+        <span class="supply-entry-cat">${cat ? cat.label : e.cat}</span>
+        <span class="supply-entry-desc">${e.desc || ''}</span>
+        <span style="font-size:9px;color:var(--text-dim);">${e.date}</span>
+      </div>
+      <span class="supply-entry-amt">-${e.amount.toLocaleString()}円</span>
+      <button class="supply-entry-del" onclick="deleteSupplyEntry(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+function deleteSupplyEntry(id) { data.supplyLog = data.supplyLog.filter(e => e.id !== id); saveData(); renderSupplyEntries(); renderSupplySummary(); }
+function renderSupplySummary() {
+  const el = document.getElementById('supply-summary');
+  const logs = data.supplyLog || [];
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthLogs = logs.filter(e => e.date.startsWith(thisMonth));
+  const monthTotal = monthLogs.reduce((s,e) => s + e.amount, 0);
+  const todayStr = now.toISOString().slice(0,10).replace(/-/g,'.');
+  const todayTotal = logs.filter(e => e.date === todayStr).reduce((s,e) => s + e.amount, 0);
+  const catTotals = {};
+  monthLogs.forEach(e => { catTotals[e.cat] = (catTotals[e.cat]||0) + e.amount; });
+  const topCat = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0];
+  el.innerHTML = `
+    <div class="supply-summary-card"><div class="supply-summary-val">${monthTotal.toLocaleString()}</div><div class="supply-summary-lab">今月の補給額(円)</div></div>
+    <div class="supply-summary-card"><div class="supply-summary-val">${todayTotal.toLocaleString()}</div><div class="supply-summary-lab">今日の補給額</div></div>
+    <div class="supply-summary-card"><div class="supply-summary-val">${topCat ? (supplyCats.find(c=>c.id===topCat[0])?.label.split(/(?<=.)/).slice(1).join('')||topCat[0]) : '──'}</div><div class="supply-summary-lab">最多カテゴリ</div></div>
+    <div class="supply-summary-card"><div class="supply-summary-val">${logs.length}</div><div class="supply-summary-lab">総記録数</div></div>`;
+}
+
+// ── 遠征記録 ──
+const baseNames = { hq: '🏠本陣', fwd: '🏢前線基地', field: '🏥戦場', other: '📍その他' };
+const actNames = { podcast: '🎧情報収集', think: '💭作戦思考', study: '📖学習', rest: '😴休息', music: '🎵士気回復', none: '──' };
+
+function toggleExpedition() {
+  const b = document.getElementById('exp-body');
+  b.classList.toggle('open');
+  document.getElementById('exp-toggle').textContent = b.classList.contains('open') ? '▲' : '▼';
+}
+function saveExpedition() {
+  const from = document.getElementById('exp-from').value;
+  const to = document.getElementById('exp-to').value;
+  const act = document.getElementById('exp-activity').value;
+  const mins = parseInt(document.getElementById('exp-minutes').value) || 0;
+  const entry = {
+    id: Date.now(), date: new Date().toISOString().slice(0,10).replace(/-/g,'.'),
+    from, to, activity: act, minutes: mins
+  };
+  data.expeditionLog.unshift(entry);
+  saveData();
+  document.getElementById('exp-minutes').value = '';
+  renderExpeditions();
+}
+function renderExpeditions() {
+  const el = document.getElementById('exp-entries');
+  if (!data.expeditionLog.length) { el.innerHTML = ''; return; }
+  el.innerHTML = data.expeditionLog.slice(0,20).map(e => {
+    return `<div class="exp-entry">
+      <div class="exp-entry-route">${baseNames[e.from]||e.from} → ${baseNames[e.to]||e.to}${e.minutes ? ' ('+e.minutes+'分)' : ''}</div>
+      <div class="exp-entry-act">${e.date} ｜ ${actNames[e.activity]||e.activity}</div>
+      <button class="exp-entry-del" onclick="deleteExpedition(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+function deleteExpedition(id) { data.expeditionLog = data.expeditionLog.filter(e => e.id !== id); saveData(); renderExpeditions(); }
+
+// ── 同盟ログ ──
+const allyTypes = [
+  { id: 'new_ally', label: '🆕 新規同盟者' },
+  { id: 'comrade', label: '⚔ 戦友' },
+  { id: 'commander', label: '👑 指揮官' },
+  { id: 'junior', label: '🛡 後輩ソルジャー' },
+  { id: 'supporter', label: '📡 遠方の支持者' },
+  { id: 'other', label: '📦 その他' },
+];
+let selectedAllyType = 'comrade';
+
+function toggleAlliance() {
+  const b = document.getElementById('ally-body');
+  b.classList.toggle('open');
+  document.getElementById('ally-toggle').textContent = b.classList.contains('open') ? '▲' : '▼';
+}
+function initAllyTypes() {
+  document.getElementById('ally-type-btns').innerHTML = allyTypes.map(t =>
+    `<button class="daily-btn${selectedAllyType===t.id?' active':''}" onclick="selectAllyType('${t.id}')" style="font-size:10px;">${t.label}</button>`
+  ).join('');
+}
+function selectAllyType(id) { selectedAllyType = id; initAllyTypes(); }
+function saveAllianceEntry() {
+  const name = document.getElementById('ally-name').value.trim();
+  const note = document.getElementById('ally-note').value.trim();
+  if (!name) return;
+  const entry = {
+    id: Date.now(), date: new Date().toISOString().slice(0,10).replace(/-/g,'.'),
+    type: selectedAllyType, name, note
+  };
+  data.allianceLog.unshift(entry);
+  saveData();
+  document.getElementById('ally-name').value = '';
+  document.getElementById('ally-note').value = '';
+  renderAlliances();
+}
+function renderAlliances() {
+  const el = document.getElementById('ally-entries');
+  if (!data.allianceLog.length) { el.innerHTML = ''; return; }
+  el.innerHTML = data.allianceLog.slice(0,20).map(e => {
+    const t = allyTypes.find(a => a.id === e.type);
+    return `<div class="ally-entry">
+      <span class="ally-entry-type">${t ? t.label : e.type}</span>
+      <span class="ally-entry-name">${e.name}</span>
+      <div class="ally-entry-note">${e.date} ｜ ${e.note || ''}</div>
+      <button class="ally-entry-del" onclick="deleteAlliance(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+function deleteAlliance(id) { data.allianceLog = data.allianceLog.filter(e => e.id !== id); saveData(); renderAlliances(); }
+
+// ── 闘技場（テニス＋運動） ──
+const arenaTypes = [
+  { id: 'tennis', label: '🎾 テニス' },
+  { id: 'gym', label: '🏋 ジム' },
+  { id: 'run', label: '🏃 ランニング' },
+  { id: 'swim', label: '🏊 水泳' },
+  { id: 'stretch', label: '🧘 ストレッチ' },
+  { id: 'other', label: '⚔ その他' },
+];
+const arenaIntensity = [
+  { id: 'light', label: '軽' },
+  { id: 'normal', label: '中' },
+  { id: 'hard', label: '激' },
+  { id: 'extreme', label: '鬼' },
+];
+const arenaResults = [
+  { id: 'win', label: '🏆 勝利' },
+  { id: 'lose', label: '💀 敗北' },
+  { id: 'draw', label: '🤝 引分' },
+  { id: 'practice', label: '🎯 練習' },
+  { id: 'na', label: '── 結果なし' },
+];
+let selectedArenaType = 'tennis';
+let selectedArenaIntensity = 'normal';
+let selectedArenaResult = 'practice';
+
+function toggleArena() {
+  const b = document.getElementById('arena-body');
+  b.classList.toggle('open');
+  document.getElementById('arena-toggle').textContent = b.classList.contains('open') ? '▲' : '▼';
+}
+function initArenaUI() {
+  document.getElementById('arena-type-btns').innerHTML = arenaTypes.map(t =>
+    `<button class="daily-btn${selectedArenaType===t.id?' active':''}" onclick="selectArenaType('${t.id}')">${t.label}</button>`
+  ).join('');
+  document.getElementById('arena-intensity-btns').innerHTML = arenaIntensity.map(i =>
+    `<button class="daily-btn${selectedArenaIntensity===i.id?' active':''}" onclick="selectArenaIntensity('${i.id}')" style="font-size:10px;">${i.label}</button>`
+  ).join('');
+  document.getElementById('arena-result-btns').innerHTML = arenaResults.map(r =>
+    `<button class="daily-btn${selectedArenaResult===r.id?' active':''}" onclick="selectArenaResult('${r.id}')" style="font-size:10px;">${r.label}</button>`
+  ).join('');
+}
+function selectArenaType(id) { selectedArenaType = id; initArenaUI(); }
+function selectArenaIntensity(id) { selectedArenaIntensity = id; initArenaUI(); }
+function selectArenaResult(id) { selectedArenaResult = id; initArenaUI(); }
+function saveArenaEntry() {
+  const dur = parseInt(document.getElementById('arena-duration').value) || 0;
+  const note = document.getElementById('arena-note').value.trim();
+  const entry = {
+    id: Date.now(), date: new Date().toISOString().slice(0,10).replace(/-/g,'.'),
+    type: selectedArenaType, duration: dur, intensity: selectedArenaIntensity,
+    result: selectedArenaResult, note
+  };
+  data.arenaLog.unshift(entry);
+  saveData();
+  document.getElementById('arena-duration').value = '';
+  document.getElementById('arena-note').value = '';
+  renderArenaEntries(); renderArenaSummary();
+}
+function renderArenaEntries() {
+  const el = document.getElementById('arena-entries');
+  if (!data.arenaLog.length) { el.innerHTML = ''; return; }
+  el.innerHTML = data.arenaLog.slice(0,20).map(e => {
+    const t = arenaTypes.find(a => a.id === e.type);
+    const r = arenaResults.find(a => a.id === e.result);
+    const i = arenaIntensity.find(a => a.id === e.intensity);
+    return `<div class="arena-entry">
+      <div class="arena-entry-type">${t?t.label:e.type} ${e.duration?e.duration+'分':''} [${i?i.label:''}] ${r?r.label:''}</div>
+      <div class="arena-entry-detail">${e.date}${e.note ? ' ｜ '+e.note : ''}</div>
+      <button class="arena-entry-del" onclick="deleteArenaEntry(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+function deleteArenaEntry(id) { data.arenaLog = data.arenaLog.filter(e => e.id !== id); saveData(); renderArenaEntries(); renderArenaSummary(); }
+function renderArenaSummary() {
+  const el = document.getElementById('arena-summary');
+  const logs = data.arenaLog || [];
+  const totalSessions = logs.length;
+  const totalMins = logs.reduce((s,e) => s + (e.duration||0), 0);
+  const tennisLogs = logs.filter(e => e.type === 'tennis');
+  const tennisWins = tennisLogs.filter(e => e.result === 'win').length;
+  const tennisLosses = tennisLogs.filter(e => e.result === 'lose').length;
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthSessions = logs.filter(e => e.date.startsWith(thisMonth)).length;
+  el.innerHTML = `
+    <div class="arena-summary-card"><div class="arena-summary-val">${totalSessions}</div><div class="arena-summary-lab">総鍛錬数</div></div>
+    <div class="arena-summary-card"><div class="arena-summary-val">${totalMins > 60 ? Math.round(totalMins/60)+'h' : totalMins+'m'}</div><div class="arena-summary-lab">総時間</div></div>
+    <div class="arena-summary-card"><div class="arena-summary-val">${monthSessions}</div><div class="arena-summary-lab">今月</div></div>
+    <div class="arena-summary-card"><div class="arena-summary-val">${tennisWins}W${tennisLosses}L</div><div class="arena-summary-lab">テニス戦績</div></div>`;
+}
+
+// ── クイズ道場 ──
+const quizCategories = [
+  { id: 'clinical', label: '🏥 臨床' },
+  { id: 'general_med', label: '🌍 一般医療' },
+  { id: 'career', label: '🗡 キャリア' },
+  { id: 'gold', label: '💰 お金・税金' },
+  { id: 'ai', label: '🤖 AI召喚術' },
+  { id: 'trivia', label: '😂 面白雑学' },
+  { id: 'useless', label: '🤷 どうでもいい話' },
+  { id: 'naruhodo', label: '💡 なるほど' },
+  { id: 'nostalgia', label: '📺 あの頃' },
+];
+const quizDifficulties = [
+  { id: 'recruit', label: '新兵級', stars: '★' },
+  { id: 'soldier', label: '一般兵級', stars: '★★' },
+  { id: 'veteran', label: '古参級', stars: '★★★' },
+  { id: 'commander', label: '指揮官級', stars: '★★★★' },
+];
+let selectedQuizCat = 'clinical';
+let selectedQuizDiff = 'recruit';
+let currentQuiz = null;
+let quizIndex = 0;
+let quizScore = 0;
+
+const quizBank = {
+  // ═══════════════════════════════════════════════
+  // 🏥 臨床（既存＋拡張）
+  // ═══════════════════════════════════════════════
+  clinical: {
+    recruit: [
+      { q: '心肺停止の患者に最初に行うべきことは？', opts: ['胸骨圧迫', '気管挿管', '静脈路確保', '心電図モニター装着'], ans: 0, exp: 'BLS（一次救命処置）ではまず質の高い胸骨圧迫を開始する。CABの順。' },
+      { q: 'SpO2 95%以下を示した時、最初に確認すべきことは？', opts: ['プローブの装着状態', '酸素投与量', '胸部X線', '血液ガス'], ans: 0, exp: 'まずプローブの装着不良やノイズの確認。アーチファクトによる偽低値は極めて多い。' },
+      { q: 'アナフィラキシーの第一選択薬は？', opts: ['アドレナリン筋注', 'ステロイド静注', '抗ヒスタミン薬', '生食急速輸液'], ans: 0, exp: 'アドレナリン0.3-0.5mg筋注（大腿外側）が第一選択。遅れると致命的。' },
+      { q: '成人のBLSにおける胸骨圧迫の深さの目安は？', opts: ['約5cm', '約3cm', '約7cm', '約10cm'], ans: 0, exp: '成人では約5cm（少なくとも5cm）の深さで、100-120回/分のテンポで圧迫する。' },
+      { q: 'JCS（Japan Coma Scale）で「刺激すると覚醒する」はどのレベル？', opts: ['二桁（10-30）', '一桁（1-3）', '三桁（100-300）', 'ゼロ'], ans: 0, exp: 'JCS一桁は自発的覚醒、二桁は刺激で覚醒、三桁は刺激しても覚醒しない。' },
+      { q: '救急外来で「バイタルサイン」に含まれないのは？', opts: ['血糖値', '血圧', '脈拍', '体温'], ans: 0, exp: '古典的バイタルサインは血圧・脈拍・呼吸数・体温・SpO2。血糖値はバイタルに含まないが、意識障害時には必ず測定。' },
+      { q: '大人の正常な安静時心拍数の範囲は？', opts: ['60-100回/分', '40-60回/分', '100-120回/分', '80-140回/分'], ans: 0, exp: '成人の正常心拍数は60-100回/分。スポーツ選手は50台もあり得る。' },
+    ],
+    soldier: [
+      { q: '敗血症性ショックで初期輸液として推奨される量は？', opts: ['30mL/kg晶質液を3時間以内', '10mL/kg膠質液', '500mL生食を6時間かけて', '利尿剤を先行投与'], ans: 0, exp: 'SSCG2021では30mL/kgの晶質液を最初の3時間以内に開始（Hour-1 Bundle）。' },
+      { q: 'ABCDE アプローチの「D」は何を意味する？', opts: ['Disability（意識・神経）', 'Diagnosis（診断）', 'Drug（薬剤）', 'Drainage（ドレナージ）'], ans: 0, exp: 'D = Disability。GCS/JCSでの意識評価、瞳孔所見、血糖値確認を行う。' },
+      { q: '高K血症の心電図変化で最も早期に出現するのは？', opts: ['テント状T波', 'P波消失', 'QRS幅延長', 'sine wave'], ans: 0, exp: 'K値上昇に伴い、テント状T波→P波平坦化→QRS延長→sine waveと進行する。' },
+      { q: 'qSOFAスコアに含まれない項目は？', opts: ['体温', '意識変容', '収縮期血圧≤100', '呼吸数≥22'], ans: 0, exp: 'qSOFAは呼吸数≥22、意識変容（GCS<15）、収縮期血圧≤100の3項目。体温は含まない。' },
+      { q: '外傷患者の初期評価でprimary surveyに含まれないのは？', opts: ['詳細な病歴聴取', '気道評価', '循環評価', '意識評価'], ans: 0, exp: 'Primary surveyはABCDE。詳細な病歴はsecondary surveyで行う（AMPLE）。' },
+      { q: '急性冠症候群を疑ったとき、最初に行う検査は？', opts: ['12誘導心電図', '心臓カテーテル', '心エコー', 'CT冠動脈造影'], ans: 0, exp: '12誘導心電図は10分以内に実施。ST変化の有無がその後の治療戦略を決める。' },
+    ],
+    veteran: [
+      { q: 'ARDS患者の人工呼吸器管理で推奨される一回換気量は？', opts: ['6mL/kg（予測体重）', '10mL/kg（実測体重）', '8mL/kg（予測体重）', '4mL/kg（実測体重）'], ans: 0, exp: 'ARDSNet戦略：予測体重あたり6mL/kg、プラトー圧30cmH2O以下を目標とする。' },
+      { q: '重症頭部外傷患者の目標PaCO2は？', opts: ['35-40mmHg', '25-30mmHg', '45-50mmHg', '20-25mmHg'], ans: 0, exp: '過換気は脳血管収縮→脳虚血のリスク。通常は35-40mmHgの正常範囲を維持する。' },
+      { q: 'SIADHの治療で最も重要な初期対応は？', opts: ['水制限', 'フロセミド投与', '3%NaCl急速投与', 'トルバプタン投与'], ans: 0, exp: '軽症〜中等症のSIADHではまず水制限（800-1000mL/日）。急速補正はODSのリスク。' },
+      { q: '院外心停止のVF/pVTに対するアドレナリン投与タイミングは？', opts: ['2回目の除細動後', '心停止認識直後', '3回目の除細動後', 'ROSC後'], ans: 0, exp: 'ショック適応リズムでは2回目のショック後（AHA/JRC GL2020）。初回ショックが優先。' },
+      { q: '人工呼吸管理中の鎮静評価スケール「RASS」で0は何を意味する？', opts: ['覚醒かつ穏やか', '軽度鎮静', '興奮', '深い鎮静'], ans: 0, exp: 'RASS 0=覚醒・穏やか。+1〜+4は興奮側、-1〜-5は鎮静側。ICUでは-2〜0を目標とすることが多い。' },
+    ],
+    commander: [
+      { q: '多発外傷患者で大量輸血プロトコル発動の指標として広く使われるのは？', opts: ['ABCスコア', 'TRISSスコア', 'APACHEスコア', 'SOFAスコア'], ans: 0, exp: 'ABC score（Assessment of Blood Consumption）は4項目の簡便なスコアで、≥2でMTPを考慮。' },
+      { q: 'ECMOのV-AとV-Vの使い分けで、V-A ECMOの主な適応は？', opts: ['心原性ショック', '重症ARDS', '気管支喘息重積', '肺塞栓（血行動態安定）'], ans: 0, exp: 'V-A ECMOは循環補助（心原性ショック、心停止）、V-V ECMOは呼吸補助（重症ARDS）。' },
+      { q: '腹部コンパートメント症候群の診断基準となる腹腔内圧は？', opts: ['20mmHg以上＋臓器障害', '10mmHg以上', '30mmHg以上', '15mmHg以上＋臓器障害'], ans: 0, exp: 'WSACS定義：IAP>20mmHg（持続的or反復的）＋新規臓器障害の存在。' },
+      { q: '脳死判定に必要な条件として正しくないのは？', opts: ['心停止の確認', '深昏睡', '自発呼吸の消失', '脳幹反射の消失'], ans: 0, exp: '脳死判定は深昏睡、瞳孔固定・散大、脳幹反射消失、平坦脳波、自発呼吸消失の5項目。心停止は含まない。' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════
+  // 🌍 一般医療知識（社会で通用する医療情報）
+  // ═══════════════════════════════════════════════
+  general_med: {
+    recruit: [
+      { q: '大人が1日に飲むべき水の量の目安は？', opts: ['約1.5〜2リットル', '約0.5リットル', '約4リットル', '約500mL'], ans: 0, exp: '食事から約1L、飲料から約1.5L摂取するのが目安。ただし運動量や気温で変わる。' },
+      { q: '「平熱」として正常な体温の範囲は？', opts: ['36.0〜37.0℃前後', '35.0〜35.5℃', '37.5〜38.0℃', '34.5〜35.0℃'], ans: 0, exp: '日本人の平均体温は36.6〜37.2℃程度。36.0℃未満は低体温の可能性あり。37.5℃以上を発熱とすることが多い。' },
+      { q: '風邪に抗生物質は効く？', opts: ['効かない（風邪の大半はウイルス性）', '必ず効く', '半分くらい効く', '予防的に飲めば効く'], ans: 0, exp: '風邪の90%以上はウイルス性。抗生物質はウイルスに無効。不要な抗生物質は耐性菌を増やすリスクがある。' },
+      { q: 'AEDは心臓が止まった人に使う？', opts: ['心室細動などの不整脈に使う', 'すべての心停止に使う', '脈がある人に使う', '意識がある人に使う'], ans: 0, exp: 'AEDはVF（心室細動）やpVT（無脈性心室頻拍）を検出し電気ショックを与える。心静止には無効。迷ったらとにかく装着。' },
+      { q: 'インフルエンザの予防接種は毎年必要な理由は？', opts: ['ウイルスが毎年変異するから', '効果が1ヶ月で切れるから', '法律で義務化されているから', '1回では抗体ができないから'], ans: 0, exp: 'インフルエンザウイルスは抗原変異が早く、流行株が毎年変わるため、年1回の接種が推奨される。' },
+      { q: '熱中症で最も重要な応急処置は？', opts: ['涼しい場所に移動し体を冷やす', 'すぐに水を大量に飲ませる', '安静にして様子を見る', '解熱剤を飲ませる'], ans: 0, exp: '冷所への移動＋冷却が最優先。意識障害があれば無理に飲ませず即119番。解熱剤は無効。' },
+      { q: '「かさぶた」は剥がした方が治りが早い？', opts: ['剥がさない方がよい', '剥がした方が早い', 'どちらでも同じ', '消毒して剥がすべき'], ans: 0, exp: 'かさぶたは自然の保護膜。剥がすと再出血・感染リスクが上がる。湿潤療法が主流になりつつある。' },
+    ],
+    soldier: [
+      { q: '「血圧130/85mmHg」は高血圧？', opts: ['高値血圧（正常高値）に分類される', '完全に正常', '高血圧ステージ2', '低血圧'], ans: 0, exp: 'JSH2019では130-139/85-89を高値血圧と分類。140/90以上が高血圧。ただし家庭血圧は135/85以上で高血圧。' },
+      { q: 'BMI 25以上は日本では何に分類される？', opts: ['肥満', '標準', '痩せ', '過体重'], ans: 0, exp: 'WHO基準では25以上=過体重、30以上=肥満だが、日本肥満学会ではBMI 25以上を肥満と定義。人種差を考慮。' },
+      { q: '健康診断の「LDLコレステロール」が高いとどうなる？', opts: ['動脈硬化・心筋梗塞のリスクが上がる', '免疫力が下がる', '骨が弱くなる', '血糖値が上がる'], ans: 0, exp: 'LDL（悪玉）コレステロールは血管壁にプラークを形成し、動脈硬化→心筋梗塞・脳梗塞のリスクを上げる。' },
+      { q: '「ピロリ菌」の除菌が推奨される最大の理由は？', opts: ['胃がんリスクの低減', '口臭の改善', '下痢の予防', '食欲増進'], ans: 0, exp: 'H.pyloriは胃がんの主要なリスク因子。除菌により胃がん発生率が約1/3に低下するとされる。' },
+      { q: '大腸がん検診で使われる「便潜血検査」の仕組みは？', opts: ['便中の微量な血液を検出する', '便の色を目視で確認する', '大腸の細菌を培養する', '便のDNAを解析する'], ans: 0, exp: '免疫法で便中のヒトヘモグロビンを検出。2日法が一般的。陽性なら大腸内視鏡で精査。' },
+    ],
+    veteran: [
+      { q: '日本人の死因第1位は？（2024年時点）', opts: ['悪性新生物（がん）', '心疾患', '脳血管疾患', '肺炎'], ans: 0, exp: '1981年以来、がんが死因第1位を維持。2位心疾患、3位老衰、4位脳血管疾患（2023年人口動態統計）。' },
+      { q: '「フレイル」とは何か？', opts: ['加齢による心身の衰え（介護手前の状態）', '骨折のこと', '認知症の別名', '栄養過多の状態'], ans: 0, exp: 'フレイル=Frailty。健康と要介護の中間状態。適切な介入で健康に戻れる可能性がある重要な概念。' },
+      { q: '訪問診療と往診の違いは？', opts: ['訪問診療は計画的・定期的、往診は臨時・緊急対応', '同じ意味', '往診の方が定期的', '訪問診療は看護師が行く'], ans: 0, exp: '訪問診療=月2回等の定期訪問。往診=患者の求めに応じた臨時訪問。在宅医療の基本的な区別。' },
+    ],
+    commander: [
+      { q: '2025年施行の「かかりつけ医機能報告制度」の主な目的は？', opts: ['かかりつけ医機能の「見える化」', '医師の給与を上げる', '病院の統廃合', '患者の受診制限'], ans: 0, exp: '医療機関がかかりつけ医機能の有無を都道府県に報告。患者が自分に合った医療機関を選びやすくする制度。' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════
+  // 🗡 キャリア
+  // ═══════════════════════════════════════════════
+  career: {
+    recruit: [
+      { q: '2024年から適用された医師の時間外労働上限は（A水準）？', opts: ['年960時間', '年720時間', '年1860時間', '年1200時間'], ans: 0, exp: 'A水準（一般）は年960時間/月100時間。B・C水準は年1860時間だが暫定的特例。' },
+      { q: '初期臨床研修の期間は？', opts: ['2年間', '1年間', '3年間', '4年間'], ans: 0, exp: '2004年の新医師臨床研修制度より2年間の初期臨床研修が必修化された。' },
+      { q: '専門医機構が管理する新専門医制度の基本領域は何科ある？', opts: ['19領域', '15領域', '24領域', '12領域'], ans: 0, exp: '基本領域は19。その上にサブスペシャルティ領域がある。' },
+      { q: '研修医の「36時間連続勤務」は今でも合法？', opts: ['宿日直許可があれば形式上は可能', '完全に違法', '48時間まで合法', '研修医は例外'], ans: 0, exp: '宿日直許可がある場合は労働時間にカウントされない建前。だが実態との乖離が問題になっている。' },
+    ],
+    soldier: [
+      { q: '医師のバイト（非常勤）の一般的な当直料の相場は？', opts: ['3〜10万円/回', '1〜2万円/回', '15〜20万円/回', '30万円以上/回'], ans: 0, exp: '施設や科により大きく異なるが、一般的な当直バイトは3〜10万円が多い。僻地は高くなる。' },
+      { q: '医師が「産業医」資格を取得する最も一般的な方法は？', opts: ['日本医師会の産業医研修を受講', '5年の臨床経験のみ', '労働基準監督署への申請', '大学院修了'], ans: 0, exp: '日本医師会の産業医学基礎研修（50単位）を修了するのが最も一般的なルート。' },
+      { q: '医師の転職で「医局を辞める」ことが難しいと言われる最大の理由は？', opts: ['人間関係・紹介先のネットワークを失う', '法律で禁止されている', '退職金がなくなる', '免許が取り消される'], ans: 0, exp: '医局は人材紹介ネットワーク。離脱すると関連病院への異動・バイト先の紹介が途絶える。ただし近年は転職サイト経由も一般化。' },
+    ],
+    veteran: [
+      { q: '医師がマイクロ法人を設立するメリットとして最も大きいのは？', opts: ['社会保険料の最適化', '所得税の免除', '消費税の還付', '医療広告の制限解除'], ans: 0, exp: '最低限の役員報酬でマイクロ法人を運営し、社保料を最適化する手法。法人税の恩恵も。' },
+      { q: '勤務医の節税手段として使えないのは？', opts: ['青色申告特別控除', '特定支出控除', 'iDeCo', 'ふるさと納税'], ans: 0, exp: '青色申告は事業所得者向け。勤務医（給与所得者）は特定支出控除・iDeCo・ふるさと納税等を活用。' },
+      { q: '医師の「1億円プレイヤー」は何年目で達成可能か（一般的な勤務医）？', opts: ['累計年収なら卒後5〜7年で達成', '卒後1年目で年収1億', '卒後20年で年収1億', '開業しないと不可能'], ans: 0, exp: '年収1,500万×7年≒1億。ただし手取りは約6割。「稼いだ」と「残った」は全く別の話。これが解放戦記の核心。' },
+    ],
+    commander: [
+      { q: '医師が資産管理会社を設立する際、最も注意すべき税務リスクは？', opts: ['同族会社の行為否認規定', '消費税の納税義務', '固定資産税', '法人住民税の均等割'], ans: 0, exp: '同族会社は税務調査で行為否認されるリスク。実態の伴わない取引は特に危険。' },
+      { q: '1億円の借金を抱えた医師が最初にすべきことは？', opts: ['返済計画の全体像を把握する', 'すぐに自己破産する', '借金を無視して稼ぐ', '親に頼る'], ans: 0, exp: '住宅ローン等の「良い借金」と消費者金融等の「悪い借金」を分類し、金利の高いものから対策。全体像の把握が第一歩。1億でも計画があれば戦える。' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════
+  // 💰 お金・税金
+  // ═══════════════════════════════════════════════
+  gold: {
+    recruit: [
+      { q: '医師の平均年収（勤務医）はおおよそいくら？', opts: ['約1,200〜1,500万円', '約600〜800万円', '約2,000〜2,500万円', '約3,000万円以上'], ans: 0, exp: '厚労省統計では勤務医の平均年収は約1,200〜1,500万円。診療科・地域・年齢で大きく異なる。' },
+      { q: 'iDeCoの掛金は所得控除の何に該当する？', opts: ['小規模企業共済等掛金控除', '生命保険料控除', '社会保険料控除', '医療費控除'], ans: 0, exp: 'iDeCoの掛金は全額所得控除。勤務医の場合、月額上限は1.2〜2.3万円（企業年金の有無で変動）。' },
+      { q: 'ふるさと納税の自己負担額の下限は？', opts: ['2,000円', '5,000円', '10,000円', '0円'], ans: 0, exp: '上限額以内であれば自己負担2,000円で、残りが所得税・住民税から控除される。' },
+      { q: '「源泉徴収」とは何？', opts: ['給料から税金を天引きする仕組み', '税金を免除する制度', '確定申告の別名', '消費税の計算方法'], ans: 0, exp: '雇用者が給与支払い時に所得税を事前に差し引く制度。年末調整で過不足を精算する。' },
+    ],
+    soldier: [
+      { q: '年収1,500万円の勤務医が払う所得税の最高税率は？', opts: ['33%', '23%', '40%', '45%'], ans: 0, exp: '課税所得900万超〜1,800万以下は税率33%。累進課税のため全額に適用されるわけではない。' },
+      { q: '新NISAのつみたて投資枠の年間上限は？', opts: ['120万円', '40万円', '240万円', '360万円'], ans: 0, exp: '2024年〜の新NISAは、つみたて投資枠120万円＋成長投資枠240万円＝年間360万円が上限。' },
+      { q: '住宅ローン控除は最大何年間適用される？（2024年入居）', opts: ['13年間', '10年間', '15年間', '20年間'], ans: 0, exp: '2024年入居の場合、新築は最大13年間。中古は最大10年間。控除率は年末残高の0.7%。' },
+      { q: '医師が確定申告が「必要」になる条件は？', opts: ['年収2,000万円超、または2カ所以上から給与', '全員必要', '開業医のみ', '年収500万円超'], ans: 0, exp: '給与所得のみでも年収2,000万超は確定申告必須。2カ所以上の勤務先がある場合も必要。バイトしてる医師は要注意。' },
+    ],
+    veteran: [
+      { q: '医師が不動産投資で最も気をつけるべきリスクは？', opts: ['キャッシュフローがマイナスになりやすい', '入居率100%保証がある', '節税効果が永続する', '利回りが確実に高い'], ans: 0, exp: '高年収医師は営業ターゲット。CF赤字＋節税効果の減少＋売却損のトリプルパンチが典型的な失敗パターン。' },
+      { q: '勤務医の手取りは年収のおよそ何割？', opts: ['約55〜65%', '約80〜90%', '約40〜45%', '約70〜80%'], ans: 0, exp: '年収1,500万の場合、所得税・住民税・社保で約35〜45%が引かれる。手取りは850〜1,000万程度。「高年収＝高手取り」ではない。' },
+    ],
+    commander: [
+      { q: '医師が法人を設立して自身への役員報酬を設定する際、最も重要な原則は？', opts: ['定期同額給与の原則', '出来高払いの原則', '利益連動給与の原則', '最低賃金の原則'], ans: 0, exp: '法人税法上、役員報酬は「定期同額給与」でなければ損金算入できない。期中の変更は原則不可。' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════
+  // 🤖 AI召喚術
+  // ═══════════════════════════════════════════════
+  ai: {
+    recruit: [
+      { q: '医療現場でAIを使う際、絶対にやってはいけないことは？', opts: ['患者の個人情報をそのまま入力する', 'プロンプトを工夫する', '出力を批判的に検証する', '複数のAIを比較する'], ans: 0, exp: '患者の氏名・ID・詳細な病歴をそのまま入力するのは個人情報保護法・守秘義務に違反する可能性がある。必ず匿名化。' },
+      { q: 'ChatGPTなどのLLMが苦手とするタスクは？', opts: ['最新の薬価や診療報酬点数の正確な回答', '文章の要約', 'アイデアのブレスト', '翻訳'], ans: 0, exp: 'LLMは学習データのカットオフがあり、頻繁に更新される薬価・点数の正確な回答は苦手。必ず公式資料で確認。' },
+      { q: '「ハルシネーション」とは何？', opts: ['AIがもっともらしい嘘を生成すること', 'AIが画像を生成すること', 'AIが感情を持つこと', 'AIが暴走すること'], ans: 0, exp: 'AIが事実と異なる情報を自信満々に生成する現象。医療情報では致命的になり得るため、必ず人間が検証すべき。' },
+    ],
+    soldier: [
+      { q: 'プロンプトエンジニアリングで「Chain of Thought」とは？', opts: ['段階的に思考過程を踏ませる手法', 'プロンプトを暗号化する手法', '複数AIを連鎖させる手法', 'プロンプトを短くする手法'], ans: 0, exp: 'CoTは「ステップバイステップで考えて」のように段階的推論を促す手法。精度が向上する。' },
+      { q: '医療文書作成にAIを使う際のベストプラクティスは？', opts: ['AIで下書き→人間が必ず確認・修正', 'AIの出力をそのまま使用', '患者情報を含めて精度を上げる', '一度の出力で完成させる'], ans: 0, exp: 'AI＝下書き支援ツール。最終確認と責任は必ず医師にある。ハルシネーションのチェックは必須。' },
+      { q: 'Claude、ChatGPT、Geminiを比較して使う最大のメリットは？', opts: ['各AIの得意分野を活かして精度を上げる', '料金が安くなる', '1つに頼ると壊れるから', '法律で義務付けられている'], ans: 0, exp: '同じ質問を複数AIに投げて比較すると、ハルシネーションを発見しやすい。Claudeは長文推論、GPTは汎用性、Geminiは検索連携に強い。' },
+    ],
+    veteran: [
+      { q: 'RAG（Retrieval-Augmented Generation）の主な利点は？', opts: ['最新の情報や専門知識を参照して回答精度を上げる', 'AIの処理速度を上げる', 'トレーニングコストを削減する', '画像生成精度を上げる'], ans: 0, exp: 'RAGは外部知識ベースを検索→取得した情報をコンテキストに含めて生成する手法。ハルシネーション低減に有効。' },
+      { q: 'X（Twitter）の投稿でAIを活用する最も効果的な使い方は？', opts: ['下書き生成→自分の声に編集→投稿', 'AI生成をそのまま投稿', 'AIに完全自動運用させる', 'AIは使わない方がいい'], ans: 0, exp: 'AI生成そのままだと「AIっぽさ」が出る。自分の言葉に編集する工程が最重要。AIは0→1の壁を壊すツール。' },
+    ],
+    commander: [
+      { q: '医療AIの臨床実装において、FDA/PMDAの規制対象となる条件は？', opts: ['診断・治療の意思決定を支援するソフトウェア', 'すべてのAIソフトウェア', 'データの可視化のみ行うソフトウェア', '院内メール自動化ツール'], ans: 0, exp: 'SaMD（Software as a Medical Device）として規制される。診断支援AI等は医療機器として承認が必要。' },
+      { q: 'noteの記事執筆でAI活用の最適な使い方は？', opts: ['構成案→各セクション下書き→統合・編集→自分の声', '全文をAIに書かせる', 'AIは使わずすべて手書き', 'タイトルだけAIに作らせる'], ans: 0, exp: '構成をAIに作らせ、各パートの下書きを生成し、自分のエピソード・声を載せて仕上げる。学びながらコンテンツが作れる。' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════
+  // 😂 面白雑学・話題のネタ
+  // ═══════════════════════════════════════════════
+  trivia: {
+    recruit: [
+      { q: '医師の白衣が白い理由として最も有力な説は？', opts: ['清潔さの象徴・汚れが目立つから', '安いから', '医師法で決まっているから', '患者がリラックスするから'], ans: 0, exp: '白は清潔を象徴し、汚れが目立つので衛生管理に役立つ。かつては黒い服が主流だった時代もある。' },
+      { q: '「ドクターヘリ」の出動1回あたりのコストはおおよそいくら？', opts: ['約40〜50万円', '約5万円', '約500万円', '約1000万円'], ans: 0, exp: '燃料費・整備費・人件費を含めると1回約40〜50万円。患者への請求はない（公費負担）。' },
+      { q: '手術室の壁が緑や青色なのはなぜ？', opts: ['赤色の補色で目が疲れにくいから', '安い塗料だから', '緑が好きな医師が多いから', '法律で決まっているから'], ans: 0, exp: '手術中は赤い血を長時間見るため、補色の緑/青を周囲に配置すると残像が軽減され目が疲れにくい。' },
+      { q: 'カップ麺の待ち時間3分は誰が決めた？', opts: ['日清食品の安藤百福', '厚生労働省', 'WHO', 'JIS規格'], ans: 0, exp: '安藤百福が「お湯を入れて3分」を発明。当初5分だったが「もう少し早く」の声で3分に。商品開発の天才。' },
+      { q: '医師が当直中に最も食べたくなるものは？（ある調査）', opts: ['カップ麺・炭水化物系', '野菜サラダ', 'プロテインバー', 'フルーツ'], ans: 0, exp: '深夜の疲労とストレスで炭水化物への渇望が増す。血糖値の乱高下が翌日のパフォーマンスに影響。当直メシは戦略。' },
+    ],
+    soldier: [
+      { q: '人間の体で最も硬い組織は？', opts: ['歯のエナメル質', '大腿骨', '頭蓋骨', '爪'], ans: 0, exp: 'エナメル質はモース硬度7。鉄（硬度4）より硬い。ただし酸には弱く、虫歯になる。' },
+      { q: '「二日酔い」の主な原因物質は？', opts: ['アセトアルデヒド', 'エタノール', 'メタノール', 'アセトン'], ans: 0, exp: 'アルコールが肝臓で代謝されてできるアセトアルデヒドが主犯。ALDH2の活性が低い人（日本人に多い）は特に辛い。' },
+      { q: '医師の間で「白い巨塔」が必ず話題になる理由は？', opts: ['医局制度のリアルさが身に染みるから', 'ファッションの参考になるから', '最新の医療技術が学べるから', '試験に出るから'], ans: 0, exp: '山崎豊子の原作は医局の権力構造を描き、医師なら誰もが「あるある」と感じる。何十年経っても色褪せない名作。' },
+      { q: '「ストレッチャー」と「担架」の違いは？', opts: ['ストレッチャーは車輪付き', '同じもの', '担架の方が高級', 'ストレッチャーは使い捨て'], ans: 0, exp: 'ストレッチャー（stretcher）は車輪付きの搬送台。担架は折りたたみ式で車輪なし。救急車にはストレッチャーが載っている。' },
+    ],
+    veteran: [
+      { q: '世界で最も処方されている薬は何？', opts: ['スタチン系（高脂血症薬）', 'アスピリン', '抗生物質', '降圧薬'], ans: 0, exp: 'アトルバスタチンは世界で最も売れた薬の一つ。累計売上は1,500億ドル以上。動脈硬化予防の基本薬。' },
+      { q: '日本の医師数はおおよそ何人？', opts: ['約34万人', '約10万人', '約50万人', '約100万人'], ans: 0, exp: '2022年時点で約34万人。人口1,000人あたり2.7人で、OECD平均（3.7人）を下回る。' },
+      { q: '「救急車の有料化」は実現している国がある？', opts: ['ある（アメリカなど）', 'どの国も無料', '日本だけ有料', '先進国はすべて有料'], ans: 0, exp: 'アメリカでは救急車1回で数十万〜百万円の請求が来ることも。日本は無料だが、軽症利用の増加で有料化議論が続く。' },
+    ],
+    commander: [
+      { q: '手術中に音楽をかける外科医は全体の何割程度？', opts: ['約60〜70%（海外調査）', '約5%', '全員かける', '法律で禁止'], ans: 0, exp: 'BMJ調査では外科医の約62%が手術中に音楽を聴く。集中力向上やストレス軽減に役立つが、コミュニケーション阻害のリスクも。' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════
+  // 🤷 どうでもいい話
+  // ═══════════════════════════════════════════════
+  useless: {
+    recruit: [
+      { q: '人間は一生で平均何回まばたきする？', opts: ['約6億回', '約100万回', '約1億回', '約10億回'], ans: 0, exp: '1分に約15〜20回×起きてる時間×寿命で約6億回。まばたき1回は約0.3秒。人生で約3年分は目を閉じている計算。' },
+      { q: 'パンダの1日の食事時間は？', opts: ['約14時間', '約2時間', '約30分', '約8時間'], ans: 0, exp: '竹は栄養価が低いため、パンダは1日約14時間も食べ続ける。1日に12〜38kgの竹を消費。究極の燃費の悪さ。' },
+      { q: '聴診器を発明したきっかけは？', opts: ['患者の胸に耳を当てるのが恥ずかしかったから', '音楽が好きだったから', '軍隊で使うため', '偶然の発見'], ans: 0, exp: 'ラエンネックが1816年に発明。女性患者の胸に耳を直接当てるのが不適切だと感じたのがきっかけ。紙を丸めたのが最初の聴診器。' },
+      { q: '人間の胃酸のpHはおおよそいくつ？', opts: ['1〜2（強酸性）', '5〜6（弱酸性）', '7（中性）', '9〜10（アルカリ性）'], ans: 0, exp: 'pH 1〜2は鉄を溶かすレベル。胃壁は粘液で自己消化から守られている。胃酸がなければ食中毒だらけ。' },
+      { q: 'ゴキブリは頭を切られても何日生きる？', opts: ['約1週間', '即死する', '約1時間', '約1ヶ月'], ans: 0, exp: '開放血管系のため出血で死なず、脳がなくても反射で動ける。最終的に餓死・脱水で約1週間後に死ぬ。生命力の化け物。' },
+      { q: 'バナナは放射線を出している？', opts: ['出している（カリウム40）', '出していない', '皮だけ出す', '熟すと出す'], ans: 0, exp: 'バナナにはカリウム40（天然放射性同位体）が含まれる。「バナナ等価線量」という単位があるほど。もちろん健康に影響なし。' },
+    ],
+    soldier: [
+      { q: '「右と左の靴を区別する」ようになったのはいつ頃？', opts: ['19世紀中頃', '古代ローマ時代', '第二次世界大戦後', '紀元前3000年'], ans: 0, exp: '1850年頃まで靴は左右対称（ストレートラスト）だった。フィラデルフィアの靴職人が左右を分けた靴を量産化した。' },
+      { q: '「OK」という言葉の起源として最も有力な説は？', opts: ['oll korrect（all correctのスペルミスジョーク）', '日本語の「おーけー」', 'フランス語', 'ラテン語'], ans: 0, exp: '1839年のボストンの新聞で「Oll Korrect（all correct）」の略として登場。当時の流行だったスペルミスジョーク。' },
+      { q: '宇宙空間で人間が防護なしで生きられる時間は？', opts: ['約15〜30秒（意識ある状態）', '即死', '約10分', '約1時間'], ans: 0, exp: '真空で約10秒で意識喪失、15〜30秒が限界。爆発はしない（映画は嘘）。体液の沸騰と酸素欠乏が原因。' },
+    ],
+    veteran: [
+      { q: '世界で最も短い戦争は何分だった？', opts: ['約38〜45分', '約3時間', '約1日', '約1週間'], ans: 0, exp: '1896年のイギリスvsザンジバル。朝9時に開戦、9時45分頃に終結。約38〜45分間。ザンジバル側の完敗。' },
+      { q: 'タコの心臓はいくつある？', opts: ['3つ', '1つ', '2つ', '5つ'], ans: 0, exp: '全身用の心臓1つ＋エラ用の心臓2つ＝合計3つ。しかも血が青い（銅を含むヘモシアニン）。異世界の生き物。' },
+    ],
+    commander: [
+      { q: '地球上で最も古い生きている木の推定年齢は？', opts: ['約5,000年', '約500年', '約1万年', '約100年'], ans: 0, exp: 'カリフォルニアのブリッスルコーンパイン「メトシェラ」は約4,850年。人類の文明が始まる前から生きている。' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════
+  // 💡 なるほどネタ
+  // ═══════════════════════════════════════════════
+  naruhodo: {
+    recruit: [
+      { q: '「プラセボ効果」で実際に痛みが和らぐのはなぜ？', opts: ['脳が内因性オピオイド（エンドルフィン）を放出するから', '気のせい', '薬が微量に入っているから', '統計の誤差'], ans: 0, exp: 'プラセボで脳内にβ-エンドルフィンが分泌されることがfMRIで確認されている。「信じる力」は生理学的に実在する。' },
+      { q: '救急車のサイレンが近づくと音が高くなる現象の名前は？', opts: ['ドップラー効果', 'ホーキング放射', 'コリオリの力', 'マグナス効果'], ans: 0, exp: '音源が近づくと波長が圧縮され高く、遠ざかると低く聞こえる。オーストリアの物理学者ドップラーが1842年に理論化。' },
+      { q: '「あくび」がうつるのはなぜ？', opts: ['共感能力（ミラーニューロン）が関係している', '酸素が足りないから', 'ウイルスが移るから', '偶然の一致'], ans: 0, exp: '共感力が高い人ほどあくびがうつりやすい。自閉スペクトラム症の研究からミラーニューロンの関与が示唆されている。' },
+      { q: '寝る前にスマホを見ると眠れなくなる最大の理由は？', opts: ['ブルーライトがメラトニン分泌を抑制するから', '電磁波が脳に悪いから', '目が乾燥するから', '内容が面白すぎるから'], ans: 0, exp: 'ブルーライト（460nm付近）が網膜の特殊な細胞（ipRGC）を刺激し、松果体のメラトニン分泌を抑制。内容の刺激も影響。' },
+      { q: '「鳥肌」が立つのは何のための反応？', opts: ['体毛を立てて保温するための名残', '汗を出すため', '血圧を下げるため', '免疫を活性化するため'], ans: 0, exp: '立毛筋の収縮。体毛の豊富だった祖先は毛を立てて空気層を作り保温した。現代人には毛が少ないので鳥肌だけ残った。' },
+    ],
+    soldier: [
+      { q: '「二度寝」が気持ちいい科学的な理由は？', opts: ['エンドルフィンとセロトニンが分泌されるから', '単に疲れているから', '夢を見ているから', '室温がちょうどいいから'], ans: 0, exp: '起床直前のREM睡眠中にエンドルフィンが分泌されやすく、再入眠でその快感が増幅される。ただし寝すぎは逆効果。' },
+      { q: '「集中力」の持続時間の限界はおおよそ何分？', opts: ['約45〜90分', '約10分', '約3時間', '約8時間'], ans: 0, exp: 'ウルトラディアンリズムにより、約90分周期で集中→休息を繰り返す。大学の授業が90分なのはこの理由。' },
+      { q: '「直感」が正しいことが多い理由は？', opts: ['経験のパターン認識が無意識に行われるから', '超能力', '偶然', '星座の影響'], ans: 0, exp: 'ゲイリー・クラインの「認知的直感」理論。熟練者は膨大な経験パターンを無意識にマッチングしている。ベテラン医師の「嫌な予感」はこれ。' },
+      { q: 'コーヒーを飲んで20分仮眠する「コーヒーナップ」が効く理由は？', opts: ['カフェインが効き始めるタイミングと覚醒が一致するから', 'コーヒーの香りが目覚まし', '胃が刺激されるから', '迷信'], ans: 0, exp: 'カフェインの覚醒効果は摂取後約20分で発現。仮眠でアデノシン（眠気物質）が受容体から外れ、カフェインがブロックする。当直の味方。' },
+    ],
+    veteran: [
+      { q: '「ストレスで白髪が増える」は科学的に証明されている？', opts: ['2020年にハーバードが証明した', 'まだ証明されていない', '完全な迷信', '遺伝のみ'], ans: 0, exp: '2020年Nature論文でストレスがノルアドレナリンを過剰分泌→毛包の色素幹細胞を枯渇させるメカニズムが解明された。' },
+      { q: '人間の脳は全体の何%しか使っていない？', opts: ['ほぼ100%使っている（10%説は都市伝説）', '10%', '30%', '50%'], ans: 0, exp: 'fMRIで確認すると脳のほぼ全領域が活動している。「10%しか使っていない」は完全な都市伝説。映画「LUCY」は面白いけど嘘。' },
+    ],
+    commander: [
+      { q: '「腸内細菌」の総重量はおおよそいくら？', opts: ['約1.5〜2kg', '約100g', '約5kg', '約10g'], ans: 0, exp: '約40兆個・約1.5〜2kgの細菌が腸に住んでいる。「第二の脳」とも呼ばれ、免疫・精神状態にも影響。' },
+      { q: '医師の「燃え尽き症候群」の有病率はおおよそ何％？', opts: ['約40〜50%', '約5%', '約10%', '約80%'], ans: 0, exp: '国際的な研究で医師の約40〜50%がバーンアウトの基準を満たす。特に救急・集中治療は高い。他人事ではない。' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════
+  // 📺 あの頃ネタ（世代別共感）
+  // ═══════════════════════════════════════════════
+  nostalgia: {
+    recruit: [
+      { q: '研修医1年目の「あるある」として最も共感されるのは？', opts: ['PHSが鳴るだけで心臓が止まる', '定時で帰れて快適', '給料が高くて嬉しい', '上級医がいつも優しい'], ans: 0, exp: '研修医のPHSトラウマは全国共通。ピッ…ピッ…という着信音がPTSD級。コードブルーの着信音が夢に出る。' },
+      { q: '医学部の試験勉強で最も使われた方法は？', opts: ['過去問の丸暗記', '教科書を最初から読む', 'AIに聞く', 'YouTubeだけで勉強'], ans: 0, exp: '医学部は「過去問に始まり過去問に終わる」。効率的だが、これだけだと臨床で困る。本当の勉強は卒後から。' },
+      { q: '研修医が最初に覚える「最も重要なスキル」は？', opts: ['採血と点滴のルート確保', '手術', '論文執筆', '学会発表'], ans: 0, exp: '「ルートが取れない研修医」は即戦力外。どんな名門大学出身でも、まず血管に針を入れる技術から。平等の第一歩。' },
+      { q: '医学生が解剖実習で最初に感じることで最も多いのは？', opts: ['独特の匂いへの衝撃', '楽しい', '簡単', '何も感じない'], ans: 0, exp: 'ホルマリンの匂いは一生忘れない。「白衣に染みついた匂いで電車の周りの人が離れていく」はあるある。' },
+    ],
+    soldier: [
+      { q: '2000年代の救急で「コードブルー」ドラマが放映された年は？', opts: ['2008年', '2003年', '2012年', '2015年'], ans: 0, exp: '2008年7月から放映開始。山下智久主演。多くの医学生・研修医に影響を与え、救急志望者が増えた。' },
+      { q: '中堅医師が後輩指導で最も辛いと感じる瞬間は？', opts: ['自分の当直が増えないのに教育の負担だけ増える', '教えるのが楽しすぎる', '後輩が自分より優秀で嬉しい', '指導料がもらえる'], ans: 0, exp: '中間管理職の苦悩。上からは成果を求められ、下からは教育を求められ、自分の時間は消える。ここで燃え尽きる人が多い。' },
+      { q: '医師の間で「36時間耐久当直」が武勇伝として語られるのはなぜ？', opts: ['過去の過酷な経験を共有する文化があるから', '楽しかったから', '法律で義務だったから', '体にいいから'], ans: 0, exp: '「俺の時代はもっと過酷だった」は医療界の悪しき文化。でも共有することで「お前だけじゃない」という安堵もある。' },
+      { q: 'ポケベル（ページャー）を使ったことがある医師の世代は？', opts: ['概ね2010年以前の研修世代', '現在も全員使っている', '1950年代のみ', '誰も使ったことがない'], ans: 0, exp: '院内PHSへの移行は2000〜2010年代に進んだ。ポケベルの「ピーピー」で当直室から走った記憶は40代以上の共通体験。' },
+    ],
+    veteran: [
+      { q: '1984年生まれが小学生の頃に流行ったゲーム機は？', opts: ['スーパーファミコン', 'PlayStation 3', 'Nintendo Switch', 'ファミコン（NES）'], ans: 0, exp: 'スーファミは1990年発売。ドラクエ5、FF6、クロノトリガー…。あの頃のワクワクは今のソシャゲでは味わえない。' },
+      { q: '医師として15年働いて「一番変わった」と感じることは？', opts: ['電子カルテとスマホの普及', '給料が10倍になった', '患者が減った', '論文が不要になった'], ans: 0, exp: '紙カルテ→電子カルテ、ポケベル→PHS→スマホ、紙の教科書→UpToDate。技術は変わったが、患者を診る本質は変わらない。' },
+      { q: '「ER 緊急救命室」を見て救急に進んだ医師は実在する？', opts: ['大量にいる', 'いない', '1人だけ', '外国だけ'], ans: 0, exp: '1994年開始のERシリーズは世界中の医学生に影響を与えた。ジョージ・クルーニー演じるロス先生に憧れた世代は確実に存在する。' },
+      { q: '2000年代の医師の「情報源」で最もメジャーだったのは？', opts: ['今日の治療薬（書籍）とUpToDate', 'ChatGPT', 'Twitter', 'Wikipedia'], ans: 0, exp: '「今日の治療薬」は白衣のポケットの必需品だった。UpToDateの普及で調べ方が変わった。AI時代の今、さらに加速中。' },
+    ],
+    commander: [
+      { q: '50代以上の医師が研修医時代に経験した「今は信じられないこと」は？', opts: ['週120時間勤務が普通だった', '週20時間しか働かなかった', '当直がなかった', '給料が今の3倍だった'], ans: 0, exp: '2004年の新研修制度以前は「36時間連続→翌日も通常勤務」が日常。働き方改革で改善されたが、まだ道半ば。' },
+      { q: '「昭和の医局」と「令和の医局」の最大の違いは？', opts: ['医師の転職の自由度', '医師の人数', '病院の数', '患者の数'], ans: 0, exp: '昭和の医局は「教授の一言で異動が決まる」絶対的権力構造。令和は転職サイトの普及で選択肢が増えた。ただし地方では今も医局の影響力は大きい。' },
+    ],
+  },
+};
+
+function toggleQuiz() {
+  const b = document.getElementById('quiz-body');
+  b.classList.toggle('open');
+  document.getElementById('quiz-toggle').textContent = b.classList.contains('open') ? '▲' : '▼';
+}
+function initQuizUI() {
+  document.getElementById('quiz-cat-btns').innerHTML = quizCategories.map(c =>
+    `<button class="daily-btn${selectedQuizCat===c.id?' active':''}" onclick="selectQuizCat('${c.id}')">${c.label}</button>`
+  ).join('');
+  document.getElementById('quiz-diff-btns').innerHTML = quizDifficulties.map(d =>
+    `<button class="daily-btn${selectedQuizDiff===d.id?' active':''}" onclick="selectQuizDiff('${d.id}')">${d.stars} ${d.label}</button>`
+  ).join('');
+  renderQuizStats();
+}
+function selectQuizCat(id) { selectedQuizCat = id; initQuizUI(); }
+function selectQuizDiff(id) { selectedQuizDiff = id; initQuizUI(); }
+function renderQuizStats() {
+  const s = data.quizStats || { total: 0, correct: 0 };
+  const rate = s.total > 0 ? Math.round(s.correct / s.total * 100) : 0;
+  document.getElementById('quiz-stats').innerHTML = `
+    <div class="quiz-stat-card"><div class="quiz-stat-val">${s.total}</div><div class="quiz-stat-lab">総挑戦数</div></div>
+    <div class="quiz-stat-card"><div class="quiz-stat-val">${s.correct}</div><div class="quiz-stat-lab">正解数</div></div>
+    <div class="quiz-stat-card"><div class="quiz-stat-val">${rate}%</div><div class="quiz-stat-lab">正答率</div></div>`;
+}
+function startQuiz() {
+  const bank = quizBank[selectedQuizCat]?.[selectedQuizDiff];
+  if (!bank || !bank.length) {
+    document.getElementById('quiz-area').innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:20px;">このカテゴリ・難易度の問題はまだない。</div>';
+    document.getElementById('quiz-area').classList.add('active');
+    return;
+  }
+  currentQuiz = [...bank].sort(() => Math.random() - 0.5).slice(0, Math.min(5, bank.length));
+  quizIndex = 0;
+  quizScore = 0;
+  renderQuizQuestion();
+}
+function renderQuizQuestion() {
+  const area = document.getElementById('quiz-area');
+  area.classList.add('active');
+  if (quizIndex >= currentQuiz.length) {
+    renderQuizResult();
+    return;
+  }
+  const q = currentQuiz[quizIndex];
+  const cat = quizCategories.find(c => c.id === selectedQuizCat);
+  const diff = quizDifficulties.find(d => d.id === selectedQuizDiff);
+  area.innerHTML = `
+    <div class="quiz-question">
+      <div class="quiz-q-num">${cat.label} ${diff.stars} ── Q${quizIndex+1}/${currentQuiz.length}</div>
+      <div class="quiz-q-text">${q.q}</div>
+    </div>
+    <div class="quiz-options" id="quiz-opts">
+      ${q.opts.map((o, i) => `<div class="quiz-opt" onclick="answerQuiz(${i})" id="qopt-${i}">${String.fromCharCode(65+i)}. ${o}</div>`).join('')}
+    </div>
+    <div class="quiz-explain" id="quiz-explain">${q.exp}</div>
+    <button class="quiz-next-btn" id="quiz-next" style="display:none;" onclick="nextQuizQuestion()">次の問題へ ▶</button>`;
+}
+function answerQuiz(idx) {
+  const q = currentQuiz[quizIndex];
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach(o => o.classList.add('disabled'));
+  if (idx === q.ans) {
+    document.getElementById(`qopt-${idx}`).classList.add('correct');
+    quizScore++;
+  } else {
+    document.getElementById(`qopt-${idx}`).classList.add('wrong');
+    document.getElementById(`qopt-${q.ans}`).classList.add('correct');
+  }
+  document.getElementById('quiz-explain').classList.add('show');
+  document.getElementById('quiz-next').style.display = 'block';
+  // Update stats
+  data.quizStats.total++;
+  if (idx === q.ans) data.quizStats.correct++;
+  if (!data.quizStats.byCategory[selectedQuizCat]) data.quizStats.byCategory[selectedQuizCat] = { total: 0, correct: 0 };
+  data.quizStats.byCategory[selectedQuizCat].total++;
+  if (idx === q.ans) data.quizStats.byCategory[selectedQuizCat].correct++;
+  saveData();
+}
+function nextQuizQuestion() {
+  quizIndex++;
+  renderQuizQuestion();
+}
+function renderQuizResult() {
+  const area = document.getElementById('quiz-area');
+  const pct = Math.round(quizScore / currentQuiz.length * 100);
+  let rank = '新兵';
+  if (pct >= 100) rank = '🏆 完全制覇！伝説のソルジャー';
+  else if (pct >= 80) rank = '⚔ 歴戦の古参兵';
+  else if (pct >= 60) rank = '🛡 一人前のソルジャー';
+  else if (pct >= 40) rank = '🗡 駆け出しの戦士';
+  else rank = '💀 もっと鍛錬が必要だ';
+  const cat = quizCategories.find(c => c.id === selectedQuizCat);
+  const diff = quizDifficulties.find(d => d.id === selectedQuizDiff);
+  const tweetText = encodeURIComponent(
+    `【ソルジャー医クイズ道場】\n${cat.label} ${diff.stars}${diff.label}\n\n結果：${quizScore}/${currentQuiz.length}問正解（${pct}%）\n${rank}\n\nお前もやってみろ。\n#解放戦記 #ソルジャー医クイズ`
+  );
+  area.innerHTML = `
+    <div class="quiz-result">
+      <div class="quiz-result-score">${quizScore} / ${currentQuiz.length}</div>
+      <div class="quiz-result-label">正解数</div>
+      <div class="quiz-result-rank">${rank}</div>
+      <button class="quiz-share-btn" onclick="window.open('https://twitter.com/intent/tweet?text=${tweetText}','_blank')">𝕏 結果をXに投稿する</button>
+      <button class="quiz-next-btn" style="margin-top:8px;" onclick="startQuiz()">再挑戦 ⚔</button>
+      <button class="quiz-next-btn" style="margin-top:4px;" onclick="document.getElementById('quiz-area').classList.remove('active');">閉じる</button>
+    </div>`;
+  renderQuizStats();
+}
+
+
+// ── 初期化 ──
+loadData();
+fcmLoadStats();
+fcmRenderCats();
+fcmUpdateUI();
+renderQuote();
+renderStats();
+renderTitles();
+renderGrowthAxes();
+initVital();
+renderJournal();
+renderStudyCatBtns();
+renderStudyFilters();
+renderStudyEntries();
+renderStudySummary();
+initDailyBtns();
+renderDailyEntries();
+initSupplyCats();
+renderSupplyEntries();
+renderSupplySummary();
+renderExpeditions();
+initAllyTypes();
+renderAlliances();
+initArenaUI();
+renderArenaEntries();
+renderArenaSummary();
+initQuizUI();
+renderChapters();
+updateStatus();
+renderLog();
+checkTitles();
+</script>
+</body>
+</html>
